@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vulkan/Objects/Buffers/CPUBuffer.h"
+
 struct PolygonFactory {
   enum {
     Triangle = 0,

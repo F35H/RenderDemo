@@ -7,6 +7,13 @@
 namespace RenderOut {
   
   struct ErrorHandler {
+    enum DebugFunction {
+      DebugMessengerInfo = 0,
+      ValidationLayerSupport,
+      LogicalDeviceLayers,
+      DebugMessengerCreation
+    }; //DebugFunction
+
     void ConfirmSuccess(VkResult result, std::string section) {
       switch (result) {
       case VK_ERROR_UNKNOWN:
@@ -89,6 +96,10 @@ namespace RenderOut {
         createInfo->ppEnabledLayerNames = layerName.data();
         return;
       } //Logic DeviceLayers
+      
+      case DebugMessengerCreation: {
+
+      }; //DebugMessengerCreation
       }; //switch(debugFunc)
     }; //AttachDebug
   }; //ErrorHandler
@@ -127,8 +138,8 @@ namespace RenderOut {
     VkSurfaceKHR surface;
 
     std::string windowName = "RenderAgent";
-    int winWidth = 800;
-    int winHeight = 800;
+    uint32_t winWidth = 800;
+    uint32_t winHeight = 800;
 
     int windowResize = false;
 
@@ -180,9 +191,10 @@ namespace RenderOut {
     VkPhysicalDevice physicalDevice;
     VkInstance vulkanInstance;
 
-    struct VulkanCreateInfo {
+    uint32_t graphicsFamily = NULL;
+    uint32_t presentFamily = NULL;
 
-    }; //VulkanCreateInfo
+    VkPhysicalDeviceMemoryProperties memProperties;
 
     ExternalProgram(int winNum) {      
       VkApplicationInfo appInfo = {
@@ -225,9 +237,9 @@ namespace RenderOut {
 
       VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
       if (_DEBUG) {
-        errorHandler->AttachDebug(ValidationLayerSupport, nullptr, nullptr, nullptr);
-        errorHandler->AttachDebug(DebugMessengerInfo, &createInfo, nullptr, &debugInfo);
-        errorHandler->AttachDebug(DebugMessengerCreation, nullptr, nullptr, nullptr);
+        errorHandler->AttachDebug(ErrorHandler::ValidationLayerSupport, nullptr, nullptr, nullptr);
+        errorHandler->AttachDebug(ErrorHandler::DebugMessengerInfo, &createInfo, nullptr, &debugInfo);
+        errorHandler->AttachDebug(ErrorHandler::DebugMessengerCreation, nullptr, nullptr, nullptr);
       }; //VkPArams::Debug
 
 
@@ -247,7 +259,8 @@ namespace RenderOut {
       uint32_t deviceCount = 0;
       vkEnumeratePhysicalDevices(vulkanInstance, &deviceCount, nullptr);
 
-      if (deviceCount == 0) throw std::runtime_error("failed to find GPUs with Vulkan support!");
+      errorHandler->ConfirmSuccess((deviceCount != 0) 
+        ? VK_SUCCESS : VK_ERROR_UNKNOWN, "Finding GPUs with Vulkan Support");
 
       std::vector<VkPhysicalDevice> devices(deviceCount);
       vkEnumeratePhysicalDevices(vulkanInstance, &deviceCount, devices.data());
@@ -275,7 +288,7 @@ namespace RenderOut {
             presentFamily = i;
           }; //if GraphicsBitSet
 
-          if (graphicsFamily.has_value() && presentFamily.has_value()) break;
+          if (graphicsFamily != NULL && presentFamily != NULL) break;
 
           ++i;
         } //for queueFamily in queueFamilyProperties
@@ -292,20 +305,23 @@ namespace RenderOut {
           requiredExtensions.erase(extension.extensionName);
         }; //for extension in Extension
 
-        if (graphicsFamily.has_value() && presentFamily.has_value() && requiredExtensions.empty()) {
+        if (graphicsFamily != NULL && presentFamily != NULL && requiredExtensions.empty()) {
           physicalDevice = device;
           break;
         } //if device compatible
       } //for device in devices
 
-      if (physicalDevice == VK_NULL_HANDLE) throw std::runtime_error("failed to find a suitable GPU!");
+
+      errorHandler->ConfirmSuccess((physicalDevice != VK_NULL_HANDLE)
+        ? VK_SUCCESS : VK_ERROR_UNKNOWN, "Failed to Find a Suitable GPU");
 
       vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
 
+
       //CREATE LOGICAL DEVICE
       std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-      std::set<uint32_t> uniqueQueueFamilies = { graphicsFamily.value(), presentFamily.value() };
+      std::set<uint32_t> uniqueQueueFamilies = { graphicsFamily, presentFamily };
 
       float queuePriority = 1.0f;
       for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -315,27 +331,32 @@ namespace RenderOut {
         queueCreateInfo.queueCount = 1;
         queueCreateInfo.pQueuePriorities = &queuePriority;
         queueCreateInfos.push_back(queueCreateInfo);
-      }
+      } //for queueFamily
 
       VkPhysicalDeviceFeatures deviceFeatures{};
 
-      VkDeviceCreateInfo createInfo{};
-      createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-      createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-      createInfo.pQueueCreateInfos = queueCreateInfos.data();
-      createInfo.pEnabledFeatures = &deviceFeatures;
-      createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-      createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-      createInfo.enabledLayerCount = 0;
+      VkDeviceCreateInfo deviceInfo{};
+      deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+      deviceInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+      deviceInfo.pQueueCreateInfos = queueCreateInfos.data();
+      deviceInfo.pEnabledFeatures = &deviceFeatures;
+      deviceInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+      deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
+      deviceInfo.enabledLayerCount = 0;
 
-      if (_DEBUG) VkDebugCheck(LogicalDeviceLayers, nullptr, &createInfo, nullptr);
+      if (_DEBUG) 
+        errorHandler->AttachDebug(
+          ErrorHandler::LogicalDeviceLayers, nullptr, &deviceInfo, nullptr);
 
-      errorHandler->ConfirmSuccess(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device));
-      if (rslt != VK_SUCCESS) ErrorHandler(rslt, "Device Creation Failed");
+      errorHandler->ConfirmSuccess(
+        vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device),
+        "Creating Logical Device");
 
+
+      //Move This
       if (_DEBUG) {
-        vkGetDeviceQueue(device, graphicsFamily.value(), 0, &graphicsQueue);
-        vkGetDeviceQueue(device, presentFamily.value(), 0, &presentQueue);
+        vkGetDeviceQueue(device, graphicsFamily, 0, &graphicsQueue);
+        vkGetDeviceQueue(device, presentFamily, 0, &presentQueue);
       }; // if DEBUG
     
 
@@ -344,8 +365,8 @@ namespace RenderOut {
 
 
 
-    Window getCurrentWindow() {
-      return windows[currentWindow];
+    Window* getCurrentWindow() {
+      return &windows[currentWindow];
     }; //getCurrentWindow
 
 
