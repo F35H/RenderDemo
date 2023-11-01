@@ -79,18 +79,11 @@ struct BufferFactory {
   std::vector<FrameBuffer> framebuffers;
   std::vector<ImageBuffer> imageBuffers;
 
-  VkImage createImageBuffer(VkDevice d) 
-  { imageBuffers.emplace_back(new ImageBuffer(d)); }
-  
-  VkFramebuffer getFrameBuffer(int i) {
-    return framebuffers[i].framebuffer;
-  }; //getFrameBuffer
+  ImageBuffer createImageBuffer(VkDevice d) {
+    imageBuffers.emplace_back(new ImageBuffer(d));
+    return imageBuffers[imageBuffers.size() - 1];
+  }; //createImageBuffer
 
-  VkImage getImage(int i) {
-    return imageBuffers[i].image;
-  }; //getImage
-
-  VkImage getImage(int i) {
-    return imageBuffers[i].image;
-  }; //getImage
 }; //BufferCollection
+
+BufferFactory* bufferFactory = new BufferFactory();

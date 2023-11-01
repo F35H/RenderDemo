@@ -5,7 +5,7 @@
 
 
 namespace RenderOut {
-  
+
   struct ErrorHandler {
     enum DebugFunction {
       DebugMessengerInfo = 0,
@@ -195,6 +195,13 @@ namespace RenderOut {
     uint32_t presentFamily = NULL;
 
     VkPhysicalDeviceMemoryProperties memProperties;
+    VkFormatProperties               formatProperties;
+    VkSurfaceCapabilitiesKHR         scAbilities;
+    std::vector<VkSurfaceFormatKHR>  scFormats;
+    std::vector<VkPresentModeKHR>    scModes;
+
+
+    VkFormat                         depthBufferFormat;
 
     ExternalProgram(int winNum) {      
       VkApplicationInfo appInfo = {
@@ -351,6 +358,31 @@ namespace RenderOut {
       errorHandler->ConfirmSuccess(
         vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device),
         "Creating Logical Device");
+
+
+      //Get DepthBuffer Format
+      for (VkFormat format : {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT}) {
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
+
+        if (VK_IMAGE_TILING_OPTIMAL == VK_IMAGE_TILING_LINEAR
+          && (formatProperties.linearTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) ==
+          VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+          depthBufferFormat = format;
+          break;
+        }
+        else if (VK_IMAGE_TILING_OPTIMAL == VK_IMAGE_TILING_OPTIMAL
+          && (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) ==
+          VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+          depthBufferFormat = format;
+          break;
+        } //if correct format;
+      } //for VkFormat
+
+      if (!depthBufferFormat) errorHandler->ConfirmSuccess(
+        VK_ERROR_FORMAT_NOT_SUPPORTED,
+        "Failed to Find Supported Depth Buffer Format");
+
+
 
 
       //Move This

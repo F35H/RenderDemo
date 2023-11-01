@@ -6,6 +6,26 @@ namespace RenderIn {
   BufferFactory* CPUBuffer;
   UniformFactory* GPUBuffer;
   
+  void VkManageMemoryProperties(
+    VkMemoryRequirements* memRequirements,
+    VkMemoryPropertyFlags* allocProperties,
+    VkMemoryAllocateInfo* allocInfo
+  ) {
+    using namespace RenderOut;
+
+    uint32_t i = 0;
+    for (; i <= externalProgram->memProperties.memoryTypeCount; ++i) {
+      if ((memRequirements->memoryTypeBits & (1 << i)) && (externalProgram->memProperties.memoryTypes[i].propertyFlags & *allocProperties) == *allocProperties) {
+        allocInfo->memoryTypeIndex = i;
+        break;
+      } //if (typeFilter)
+
+      if (i == externalProgram->memProperties.memoryTypeCount) {
+        throw std::runtime_error("failed to find suitable memory type!");
+      }; //if i == memProperties
+    } //for uint32_t
+  }
+
   struct VulkanInit {
 
   }; //VulkanInit
@@ -38,7 +58,11 @@ namespace RenderIn {
     std::vector<VkSurfaceFormatKHR> scFormats;
     std::vector<VkPresentModeKHR> scModes;
     VkSurfaceCapabilitiesKHR scAbilities;
-    VkSwapchainKHR swapChain;
+    VkDeviceMemory depthImageMemory;
+    VkImage depthImage;
+
+    std::vector<VkImage> imageVector;
+    VkImageViewCreateInfo generalImageInfo;
 
     SwapChain() {};
 
@@ -72,7 +96,7 @@ namespace RenderIn {
       case Create_Surface: {
 
         //Select Swap Chain Format
-        result = vkGetPhysicalDevicePropertiesKHR(physDevice, surface, &scAbilities);
+        result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physDevice, surface, &scAbilities);
         errorHandler->ConfirmSuccess(result, "Getting Physical Device Properties");
 
         uint32_t formatCount;
@@ -174,8 +198,68 @@ namespace RenderIn {
         result = vkCreateSwapchainKHR(externalProgram->device, this, nullptr, &swapChain);
         errorHandler->ConfirmSuccess(result, "Creating SwapChain");
 
+        
+        //Create Images 
         vkGetSwapchainImagesKHR(externalProgram->device, swapChain, &minImageCount, nullptr);
-        //Finish Sizing Image Views
+        imageVector.resize(minImageCount);
+        vkGetSwapchainImagesKHR(externalProgram->device, swapChain, &minImageCount, imageVector.data());
+
+
+        //Create Depth Image
+        VkImageCreateInfo imageInfo{};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = imageExtent.width;
+        imageInfo.extent.height = imageExtent.width;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = externalProgram->depthBufferFormat;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        result = vkCreateImage(device, &imageInfo, nullptr, &depthImage);
+        errorHandler->ConfirmSuccess(result, "Creating Depth Image");
+
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(device, depthImage, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        VkMemoryPropertyFlags allocProp = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+        VkManageMemoryProperties(&memRequirements, &allocProp, &allocInfo);
+
+        result = vkAllocateMemory(device, &allocInfo, nullptr, &depthImageMemory);
+        errorHandler->ConfirmSuccess(result, "Depth Image Memory Allocation");
+
+        vkBindImageMemory(device, depthImage, depthImageMemory, 0);
+
+
+        //Create Image Views
+        size_t i = imageVector.size();
+        for (;i >= 0;--i) {
+          
+          //Create Depth View
+          if (i == imageVector.size()) {
+            imageInfo[i].sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            info.image = imageVector[i];
+            info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            info.format = VK_FORMAT_B8G8R8A8_SRGB;
+            info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            info.subresourceRange.baseMipLevel = 0;
+            info.subresourceRange.levelCount = 1;
+            info.subresourceRange.baseArrayLayer = 0;
+            info.subresourceRange.layerCount = 1;
+            
+            vkCreateImageView(device, &imageInfo[i], nullptr, &imageView);
+          }; //
+        }; //for i >= 0
+
 
       }; //case Create
 
