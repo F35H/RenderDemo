@@ -270,7 +270,9 @@ namespace RenderIn {
     std::vector<VkSurfaceFormatKHR> scFormats;
     std::vector<VkPresentModeKHR> scModes;
     VkSurfaceCapabilitiesKHR scAbilities;
+    VkImageViewCreateInfo depthViewInfo;
     VkDeviceMemory depthImageMemory;
+    VkImageView depthView;
     VkImage depthImage;
 
     std::vector<VkImage> imageVector; //Convert This to Vector
@@ -308,7 +310,7 @@ namespace RenderIn {
         for (; i < imageVector.size(); ++i) {
           if (i == imageVector.size()-1) {
             vkDestroyImage(device, depthImage, nullptr);
-            vkDestroyImageView(device, imageViewsVector[i], nullptr);
+            vkDestroyImageView(device, depthView, nullptr);
             vkFreeMemory(device, depthImageMemory, nullptr);
             continue;
           }; //Depth View
@@ -436,8 +438,8 @@ namespace RenderIn {
         //Create Images 
         vkGetSwapchainImagesKHR(externalProgram->device, swapChain, &minImageCount, nullptr);
         imageVector.resize(minImageCount);
-        imageViewsVector.resize(minImageCount + 1); //Depth Buffer Added
-        imageViewInfoVector.resize(minImageCount + 1); //Depth Buffer Added
+        imageViewsVector.resize(minImageCount); 
+        imageViewInfoVector.resize(minImageCount);
         vkGetSwapchainImagesKHR(externalProgram->device, swapChain, &minImageCount, imageVector.data());
 
 
@@ -483,17 +485,17 @@ namespace RenderIn {
           
           //Create Depth View
           if (i == imageVector.size()) {
-            imageViewInfoVector[i].sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            imageViewInfoVector[i].image = depthImage;
-            imageViewInfoVector[i].viewType = VK_IMAGE_VIEW_TYPE_2D;
-            imageViewInfoVector[i].format = externalProgram->depthBufferFormat;
-            imageViewInfoVector[i].subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            imageViewInfoVector[i].subresourceRange.baseMipLevel = 0;
-            imageViewInfoVector[i].subresourceRange.levelCount = 1;
-            imageViewInfoVector[i].subresourceRange.baseArrayLayer = 0;
-            imageViewInfoVector[i].subresourceRange.layerCount = 1;
+            depthViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            depthViewInfo.image = depthImage;
+            depthViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            depthViewInfo.format = externalProgram->depthBufferFormat;
+            depthViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            depthViewInfo.subresourceRange.baseMipLevel = 0;
+            depthViewInfo.subresourceRange.levelCount = 1;
+            depthViewInfo.subresourceRange.baseArrayLayer = 0;
+            depthViewInfo.subresourceRange.layerCount = 1;
             
-            result = vkCreateImageView(device, &imageViewInfoVector[i], nullptr, &imageViewsVector[i]);
+            result = vkCreateImageView(device, &depthViewInfo, nullptr, &depthView);
             errorHandler->ConfirmSuccess(result, "Creating Depth Image View");
 
             continue;
@@ -575,11 +577,11 @@ namespace RenderIn {
         errorHandler->ConfirmSuccess(result, "Creating Renderpass");
 
         //CreateFrameBuffers
-        i = imageViewsVector.size() - 2;
+        i = imageViewsVector.size() - 1;
         for (; i >= 0; --i) {
           frameBuffers.emplace_back(CPUBuffer::FrameBuffer({
             imageViewsVector[i],
-            imageViewsVector[imageViewsVector.size() - 1]},
+            depthView},
             renderPass, 
             imageExtent.width,
             imageExtent.height));
