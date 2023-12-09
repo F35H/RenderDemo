@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Vulkan/Objects/Buffers/CPUBuffer.h"
+#include "Vulkan/GeneralIncludes.h"
+#include "Vulkan/Objects/ModelTypes/Polyhedra.h"
 
 struct PolygonFactory {
   enum {
@@ -11,20 +12,20 @@ struct PolygonFactory {
     Cube
   }; //enum
 
-  std::vector<Polyhedra*> polytopes;
+  std::vector<Polyhedra> polytopes;
   //std::vector<EdgeMesh*> polytopeEdges;
 
   PolygonFactory() {
     polytopes = {
-      new Polytopes::Triangle(),
-      new Polytopes::Quad(),
-      new Polytopes::Hexagon(),
-      new Polytopes::Tetrahedron(),
-      new Polytopes::Cube()
+      Polytopes::Triangle(),
+      Polytopes::Quad(),
+      Polytopes::Hexagon(),
+      Polytopes::Tetrahedron(),
+      Polytopes::Cube()
     }; //polytopes
   }; //PolygonFactory
 
-  std::vector<Polyhedra*> GetPolyhedra() {
+  std::vector<Polyhedra> GetPolyhedra() {
     return polytopes;
   }; //GetPolyhedra
 

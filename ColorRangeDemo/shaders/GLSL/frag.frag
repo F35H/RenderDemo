@@ -88,9 +88,6 @@ void main() {
   }; //SHADINGTYPE == FLAT
 
   switch (COLORGAMUT) {
-    
-    
-    
     //RGB LINEAGE
     default:
       convertedColor = vec3(1.0,1.0,1.0);

@@ -1,8 +1,7 @@
 #pragma once
 
+#include <Vulkan/GeneralIncludes.h>
 #include <ConsoleUI/UISingletons.h>
-
-#include <vector>
 
 struct Vertex {
   glm::vec3 pos;

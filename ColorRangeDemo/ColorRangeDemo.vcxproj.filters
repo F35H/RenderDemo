@@ -24,17 +24,14 @@
     <ClCompile Include="include\glm\detail\glm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Vulkan\VulkanSingletons.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ConsoleUI\UISingletons.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ConsoleUI\Facade.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="heads\Vulkan\Objects\ModelTypes\Polyhedra.h">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\RenderOut.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -47,9 +44,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="heads\ConsoleUI\UISingletons.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="heads\Vulkan\VulkanSingletons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\dxc\dxcapi.h">
@@ -1282,13 +1276,13 @@
     <ClInclude Include="heads\Vulkan\Objects\Render\RenderOut.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="heads\Vulkan\Vulkan.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="heads\Vulkan\Singletons.h">
+    <ClInclude Include="heads\Vulkan\VulkanRender.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="heads\Vulkan\GeneralIncludes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heads\Vulkan\Objects\Syncronization\SyncFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

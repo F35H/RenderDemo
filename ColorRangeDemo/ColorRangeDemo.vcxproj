@@ -135,9 +135,8 @@
     <ClCompile Include="heads\ConsoleUI\Facade.h" />
     <ClCompile Include="heads\Vulkan\Objects\ModelTypes\Polyhedra.h" />
     <ClCompile Include="include\glm\detail\glm.cpp" />
-    <ClCompile Include="src\ConsoleUI\Facade.cpp" />
     <ClCompile Include="src\ConsoleUI\UISingletons.cpp" />
-    <ClCompile Include="src\Vulkan\VulkanSingletons.cpp" />
+    <ClCompile Include="src\Vulkan\RenderOut.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\ftxui-component.lib" />
@@ -158,10 +157,8 @@
     <ClInclude Include="heads\Vulkan\Objects\ModelTypes\ModelFactory.h" />
     <ClInclude Include="heads\Vulkan\Objects\Buffers\GPUBuffer.h" />
     <ClInclude Include="heads\Vulkan\Objects\Render\RenderOut.h" />
-    <ClInclude Include="heads\Vulkan\Utilities.h" />
-    <ClInclude Include="heads\Vulkan\Singletons.h" />
-    <ClInclude Include="heads\Vulkan\Vulkan.h" />
-    <ClInclude Include="heads\Vulkan\VulkanSingletons.h" />
+    <ClInclude Include="heads\Vulkan\Objects\Syncronization\SyncFactory.h" />
+    <ClInclude Include="heads\Vulkan\VulkanRender.h" />
     <ClInclude Include="include\dxc\dxcapi.h" />
     <ClInclude Include="include\dxc\WinAdapter.h" />
     <ClInclude Include="include\ftxui\component\animation.hpp" />

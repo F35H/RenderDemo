@@ -7,7 +7,7 @@
 #include "ftxui/component/screen_interactive.hpp"
 #include "ftxui/dom/elements.hpp"
 
-#include "../UISingletons.h"
+#include <Vulkan/VulkanRender.h>
 #include "ConsoleUI/Commands/UICommands.h"
 
 using namespace ftxui;

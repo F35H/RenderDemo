@@ -69,13 +69,20 @@ struct UniformFactory {
 
     MaterialMisc
   }; //UniformProperties
-
+  UniformFactory() = default;
   UniformFactory(float aspect) {
     Uniforms = {
-      new Uniforms::Properties(),
-      new Uniforms::Position(aspect)
+      new UniformData::Properties(),
+      new UniformData::Position(aspect)
     }; //Uniforms
   }; //Uniform Factory
+
+  void Actiate(float aspect) {
+    Uniforms = {
+      new UniformData::Properties(),
+      new UniformData::Position(aspect)
+    }; //Uniforms
+  }; //Activate
 
   void UpdateRenderProperties(UniformProperties prop, glm::vec4 properties) {
     switch (prop) {
@@ -126,7 +133,7 @@ struct UniformFactory {
     return static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform);
   }; //GetUniform
 
-  PushConst* GetProperties() {
+  PushConst* GetPushConst() {
     return static_cast<PushConst*>(Uniforms[UniformType::Properties]->uniform);
   }; //GetUniform
 }; //UniformFactory

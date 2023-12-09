@@ -7,16 +7,18 @@
 #define clrscr(); system("cls");
 //#define clrscr(); system("clear");
 
-//#include <Vulkan/VulkanSingletons.h>
+#include "Vulkan/VulkanRender.h"
 #include <ConsoleUI/UISingletons.h>
 #include <ConsoleUI/Commands/UIMainMenu.h>
 #include <ConsoleUI/Commands/UIConfigure.h>
+
 
 static struct ConsoleUI {
   ConsoleUI() {
     clrscr();
 
     UICommands::UICommandInterface* menu = new UICommands::UICommandInterface();
+    Vulkan::VulkanRender* vulkan;
 
     if (UIValues::menuStage == UIParams::MenuStage::MainMenuFirst) {
       switch (UIValues::mainSelection) {
@@ -28,6 +30,7 @@ static struct ConsoleUI {
       case UIParams::MenuSelection::FilterParameters: menu = new UICommands::FilterParameters();          break;
       case UIParams::MenuSelection::GamutParameters:  menu = new UICommands::GamutParameters();           break;
       case UIParams::MenuSelection::ShadingParameters:menu = new UICommands::ShadingParameters();         break;
+      case UIParams::MenuSelection::Render:           vulkan = new Vulkan::VulkanRender();
       }; //mainSelection
     }; //first 
 
@@ -82,7 +85,9 @@ static struct ConsoleUI {
       }; //mainSelection
     }; //COnfigure
 
-    //if (UIValues::menuStage == UIParams::MenuStage::Render) 
+    //if (UIValues::menuStage == UIParams::MenuStage:) {
+
+    //}; //
 
     menu->Trigger();
   }; //ConsoleUI Ctor

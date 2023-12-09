@@ -56,7 +56,8 @@ static struct UIRenderEnums {
 
     enum NPR : unsigned char {
       GOOCH = 0,
-      GOOCHPHONG
+      GOOCHPHONG,
+      TOON
     }; //NPR
   }; //Shading
 
@@ -119,6 +120,7 @@ static struct UIParams {
     static std::string Blinphong;
     static std::string Gooch;
     static std::string GoochPhong;
+    static std::string Toon;
   }; //FilterInfo
 
   //MENU
