@@ -26,8 +26,8 @@ struct ErrorHandler {
   void ConfirmSuccess(VkResult result, std::string section) {
     switch (result) {
     case VK_SUBOPTIMAL_KHR:
+      std::cout << "VK_SUBOPTIMAL_KHR " << section << "\n";
     case VK_SUCCESS:
-      //std::cout << section << "\n";
       return;
     case VK_ERROR_UNKNOWN:
     default:
@@ -153,6 +153,7 @@ public:
       nullptr, nullptr
     ); //window
 
+    AddKeyboardCallBacks();
 
     //Create Surface
     VkWin32SurfaceCreateInfoKHR createInfo{};

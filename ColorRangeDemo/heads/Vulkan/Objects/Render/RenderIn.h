@@ -77,13 +77,13 @@ namespace RenderIn {
       file.close();
     }; //AddShaderFile
 
-    void AddShaderBinding(ShaderType shaderType, size_t offsetorstride) {
+    void AddShaderBinding(ShaderType shaderType, uint32_t offsetorstride) {
       switch (shaderType) {
       case Vertex:
 
         VkVertexInputAttributeDescription vertexBindings;
         vertexBindings.binding = 0;
-        vertexBindings.location = vertexInput.size();
+        vertexBindings.location = static_cast<uint32_t>(vertexInput.size());
         vertexBindings.format = VK_FORMAT_R32G32B32_SFLOAT;
         vertexBindings.offset = offsetorstride;
         vertexInput.emplace_back(vertexBindings);
@@ -122,7 +122,7 @@ namespace RenderIn {
       shaderModulesInfo[1].codeSize = fragBuffer.size();
       shaderModulesInfo[1].pCode = reinterpret_cast<const uint32_t*>(fragBuffer.data());
 
-      ShaderModuleCreation(shaderModulesInfo.size()-1);
+      ShaderModuleCreation(static_cast<uint32_t>(shaderModulesInfo.size())-1);
 
       //Vertex Shader Info
       pipelineShaderInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -480,8 +480,8 @@ namespace RenderIn {
         vkBindImageMemory(device, depthImage, depthImageMemory, 0);
 
         //Create Image Views
-        int i = imageVector.size();
-        for (;i >= 0;--i) {
+        size_t i = imageVector.size();
+        for (;i <= imageVector.size();--i) {
           
           //Create Depth View
           if (i == imageVector.size()) {
@@ -557,6 +557,10 @@ namespace RenderIn {
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &renderPassAttachRef[0];
         subpass.pDepthStencilAttachment = &renderPassAttachRef[1];
+        subpass.pResolveAttachments = nullptr;
+        subpass.preserveAttachmentCount = {};
+        subpass.pInputAttachments = {};
+        subpass.flags = 0;
 
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
@@ -572,13 +576,14 @@ namespace RenderIn {
         renderPassInfo.pSubpasses = &subpass;
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
+        renderPassInfo.pNext = nullptr;
 
         result = vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass);
         errorHandler->ConfirmSuccess(result, "Creating Renderpass");
 
         //CreateFrameBuffers
         i = imageViewsVector.size() - 1;
-        for (; i >= 0; --i) {
+        for (; i < imageViewsVector.size(); --i) {
           frameBuffers.emplace_back(CPUBuffer::FrameBuffer({
             imageViewsVector[i],
             depthView},
@@ -618,27 +623,23 @@ namespace RenderIn {
     uint32_t imageIndex = 0;
 
     VkCommandBufferBeginInfo startCmdBuffer;
-    VkRenderPassBeginInfo startRenderPass;
     VkViewport cmdViewport;
     VkRect2D scissor;
 
   public:
     MainLoop() {
       startCmdBuffer = {};
-      startRenderPass = {};
       cmdViewport = {};
       scissor = {};
       presentInfo = {};
-      swapChain = {};
       gfxPipeline = {};
-      bufferFactory = {};
       signalSemaphores = {};
       waitSemaphores = {};
       fences = {};
     }; //MainLoop
 
     void ActivateSyncedInput() {
-      vkWaitForFences(externalProgram->device, fences.size(), fences.data(), VK_TRUE, UINT64_MAX);
+      vkWaitForFences(externalProgram->device, static_cast<uint32_t>(fences.size()), fences.data(), VK_TRUE, UINT64_MAX);
       result = vkAcquireNextImageKHR(
         externalProgram->device, swapChain->swapChain, UINT64_MAX, waitSemaphores[0], VK_NULL_HANDLE, &imageIndex);
 
@@ -647,14 +648,14 @@ namespace RenderIn {
         return;
       }; //If Out_Of_Date
       errorHandler->ConfirmSuccess(result, "Getting SwapChain Image in MainLoop");
-      vkResetFences(externalProgram->device, fences.size(), fences.data());
+      vkResetFences(externalProgram->device, static_cast<uint32_t>(fences.size()), fences.data());
     }; //ActivateSyncedInput
 
     void ActivateCmdInput(PushConst* pushConstData, std::vector<VkClearValue> clearColor) {
       auto cmdBuffer = bufferFactory.get()->cmdPool->get()->cmdBuffers[currentFrameIndex];
       auto descSet = bufferFactory.get()->descPool->get()->descSets[currentFrameIndex];
-      auto indiceBuffer = bufferFactory.get()->indexBuffers[currentFrameIndex].GetBuffer();
-      auto verticeBuffer = bufferFactory.get()->vertexBuffers[currentFrameIndex].GetBuffer();
+      auto indiceBuffer = bufferFactory.get()->indexBuffers[externalProgram->getCurrentWindow()->modelIndex].GetBuffer();
+      auto verticeBuffer = bufferFactory.get()->vertexBuffers[externalProgram->getCurrentWindow()->modelIndex].GetBuffer();
 
       vkResetCommandBuffer(cmdBuffer, 0);
 
@@ -662,6 +663,7 @@ namespace RenderIn {
       result = vkBeginCommandBuffer(cmdBuffer, &startCmdBuffer);
       errorHandler->ConfirmSuccess(result, "Beginning CmdBuffer");
 
+      VkRenderPassBeginInfo startRenderPass{};
       startRenderPass.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
       startRenderPass.renderPass = swapChain->renderPass;
       startRenderPass.framebuffer = swapChain->frameBuffers[imageIndex].framebuffer;
@@ -669,6 +671,7 @@ namespace RenderIn {
       startRenderPass.renderArea.extent = swapChain->imageExtent;
       startRenderPass.clearValueCount = static_cast<uint32_t>(clearColor.size());
       startRenderPass.pClearValues = clearColor.data();
+      startRenderPass.pNext = nullptr;
       vkCmdBeginRenderPass(cmdBuffer, &startRenderPass, VK_SUBPASS_CONTENTS_INLINE);
       vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline->graphicsPipeline);
 
@@ -695,7 +698,6 @@ namespace RenderIn {
         0, sizeof(PushConst), pushConstData
       ); //VkCmdPushCOnst
 
-      auto test = externalProgram->getCurrentWindow()->currentModel;
       vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline->pipelineLayout, 0, 1, &descSet, 0, nullptr);
       vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(externalProgram->getCurrentWindow()->currentModel->indices.size()), 1, 0, 0, 0);
 
@@ -708,12 +710,12 @@ namespace RenderIn {
     void ActivateSyncedOutput() {
       submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
       VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-      submitInfo.waitSemaphoreCount = waitSemaphores.size();
+      submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
       submitInfo.pWaitSemaphores = waitSemaphores.data();
       submitInfo.pWaitDstStageMask = waitStages;
       submitInfo.commandBufferCount = 1;
       submitInfo.pCommandBuffers = &bufferFactory->cmdPool.value()->cmdBuffers[currentFrameIndex];
-      submitInfo.signalSemaphoreCount = signalSemaphores.size();
+      submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
       submitInfo.pSignalSemaphores = signalSemaphores.data();
       submitInfo.pNext = nullptr;
 
@@ -727,8 +729,9 @@ namespace RenderIn {
       presentInfo.pWaitSemaphores = signalSemaphores.data();
       presentInfo.swapchainCount = 1;
       presentInfo.pSwapchains = &swapChain->swapChain;
-      presentInfo.pNext = nullptr;
       presentInfo.pImageIndices = &imageIndex;
+      presentInfo.pNext = nullptr;
+      presentInfo.pResults = nullptr;
 
       result = vkQueuePresentKHR(externalProgram->presentQueue, &presentInfo);
       if (result == VK_SUBOPTIMAL_KHR) externalProgram->getCurrentWindow()->windowResize = true;

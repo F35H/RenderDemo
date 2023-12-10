@@ -212,7 +212,7 @@ namespace CPUBuffer {
       VkFramebufferCreateInfo framebufferInfo{};
       framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
       framebufferInfo.renderPass = renderPass;
-      framebufferInfo.attachmentCount = attachments.size();
+      framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
       framebufferInfo.pAttachments = attachments.data();
       framebufferInfo.width = scWidth;
       framebufferInfo.height = scHeight;
@@ -254,7 +254,7 @@ namespace CPUBuffer {
       allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
       allocInfo.commandPool = cmdPool.value().get()->cmdPool;
       allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-      allocInfo.commandBufferCount = cmdPool.value().get()->cmdBuffers.size();
+      allocInfo.commandBufferCount = static_cast<uint32_t>(cmdPool.value().get()->cmdBuffers.size());
 
       auto result = vkAllocateCommandBuffers(externalProgram->device, &allocInfo, cmdPool.value().get()->cmdBuffers.data());
       errorHandler->ConfirmSuccess(result, "Allocating Command Buffers");
