@@ -20,8 +20,16 @@ struct PolygonFactory {
       Polytopes::Triangle(),
       Polytopes::Quad(),
       Polytopes::Hexagon(),
-      Polytopes::Tetrahedron(),
-      Polytopes::Cube()
+
+      Polytopes::PlatonicSolids::Tetrahedron(),
+      Polytopes::PlatonicSolids::Cube(),
+      Polytopes::PlatonicSolids::Octahedron(),
+      Polytopes::PlatonicSolids::Icosahedron(),
+      Polytopes::PlatonicSolids::Dodecahedron(),
+    
+      Polytopes::ArchemedianSolids::Cuboctahedron(),
+      Polytopes::ArchemedianSolids::Icosidodecahedron(),
+      Polytopes::ArchemedianSolids::TruncatedTetrahedron()
     }; //polytopes
   }; //PolygonFactory
 

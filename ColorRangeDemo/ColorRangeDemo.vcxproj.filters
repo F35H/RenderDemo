@@ -1285,6 +1285,12 @@
     <ClInclude Include="heads\Vulkan\Objects\Syncronization\SyncFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="heads\Vulkan\VulkanSingletons.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heads\Vulkan\Objects\ModelTypes\PartsFactories.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">

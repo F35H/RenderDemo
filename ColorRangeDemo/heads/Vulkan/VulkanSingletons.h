@@ -1,19 +1,7 @@
 #pragma once
 
-
-
-
-#include <glm/glm.hpp>
-#include <string>
-#include <vector>
-#include <stdexcept>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <optional>
-#include <set>
-
-#include <Vulkan/Objects/Factories.h>
+#include <Vulkan/GeneralIncludes.h>
+#include <Vulkan/VulkanRender.h>
 
 static struct VkParams {
   //Application Params
@@ -94,7 +82,7 @@ struct VkWindow {
   static VkSwapchainKHR swapChain;
 
   //Polygons
-  static std::vector<Polyhedra*> polygons;
+  static std::vector<Polyhedra> polygons;
 
   //Buffers
   static std::vector<VkBuffer> indiceBuffer;
@@ -115,13 +103,13 @@ struct VkWindow {
   static VkQueue graphicsQueue;
   static VkQueue presentQueue;
   static VkCommandPool commandPool;
-  static VkPipelineLayout pipelineLayout;
-  static VkPipeline graphicsPipeline;
+  //static VkPipelineLayout pipelineLayout;
+  static RenderIn::GFXPipeline graphicsPipeline;
   static VkExtent2D swapChainExtent;
   static VkResult rslt;
   static VkPhysicalDeviceMemoryProperties memProperties;
 
-  VkWindow(UIParams::MenuSelection colorGamut);
+  VkWindow();
 
 private:
   void VkDebugCheck(DebugFunction debugFunc, VkInstanceCreateInfo* instanceCreateInfo, VkDeviceCreateInfo* createInfo, VkDebugUtilsMessengerCreateInfoEXT* debugInfo);

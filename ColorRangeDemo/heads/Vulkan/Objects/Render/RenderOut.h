@@ -10,7 +10,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
   return VK_FALSE;
 } //Debug Callback
 
-struct ErrorHandler {
+namespace RenderOut {
+  struct ErrorHandler {
 
   enum DebugFunction {
     DebugMessengerInfo = 0,
@@ -118,8 +119,9 @@ struct ErrorHandler {
     }; //switch(debugFunc)
   }; //AttachDebug
 }; //ErrorHandler
+};
 
-static std::unique_ptr <ErrorHandler>      errorHandler;
+static std::unique_ptr <RenderOut::ErrorHandler>      errorHandler;
 
 struct Window {
   GLFWwindow* window;
@@ -247,9 +249,9 @@ struct ExternalProgram {
 
     VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
     if (_DEBUG) {
-      errorHandler->AttachDebug(ErrorHandler::ValidationLayerSupport, nullptr, nullptr, nullptr);
-      errorHandler->AttachDebug(ErrorHandler::DebugMessengerInfo, &createInfo, nullptr, &debugInfo);
-      errorHandler->AttachDebug(ErrorHandler::DebugMessengerCreation, nullptr, nullptr, nullptr);
+      errorHandler->AttachDebug(RenderOut::ErrorHandler::ValidationLayerSupport, nullptr, nullptr, nullptr);
+      errorHandler->AttachDebug(RenderOut::ErrorHandler::DebugMessengerInfo, &createInfo, nullptr, &debugInfo);
+      errorHandler->AttachDebug(RenderOut::ErrorHandler::DebugMessengerCreation, nullptr, nullptr, nullptr);
     }; //VkPArams::Debug
 
 
@@ -356,7 +358,7 @@ struct ExternalProgram {
 
     if (_DEBUG)
       errorHandler->AttachDebug(
-        ErrorHandler::LogicalDeviceLayers, nullptr, &deviceInfo, nullptr);
+        RenderOut::ErrorHandler::LogicalDeviceLayers, nullptr, &deviceInfo, nullptr);
 
     errorHandler->ConfirmSuccess(
       vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device),

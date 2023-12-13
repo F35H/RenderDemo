@@ -41,9 +41,9 @@
 
 //LIGHTING AND SHADING
 #define POINTLIGHTCOLOR       vec3(1.0f, 1.0f, 1.0f)
-#define POINTLIGHTPOS         vec3(0.0f, 1.0f, -3.0f)
+#define POINTLIGHTPOS         vec3(0.0f, 2.0f, 10.0f)
 #define POINTLIGHTINTENSITY   10.0f
-#define AMBILIGHTCOLOR        vec3(0.2f, 0.2f, 0.2f)           
+#define AMBILIGHTCOLOR        vec3(0.1f, 0.1f, 0.1f)           
 #define AMBIINTENSITY         0.1f           
 #define SHADINGTYPE           int(PC.lighting[0][0])           
 

@@ -7,7 +7,6 @@
 #define clrscr(); system("cls");
 //#define clrscr(); system("clear");
 
-#include "Vulkan/VulkanRender.h"
 #include <ConsoleUI/UISingletons.h>
 #include <ConsoleUI/Commands/UIMainMenu.h>
 #include <ConsoleUI/Commands/UIConfigure.h>

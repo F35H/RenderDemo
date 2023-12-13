@@ -152,6 +152,7 @@
     <ClInclude Include="heads\ConsoleUI\Commands\UIMainMenu.h" />
     <ClInclude Include="heads\ConsoleUI\UISingletons.h" />
     <ClInclude Include="heads\Vulkan\GeneralIncludes.h" />
+    <ClInclude Include="heads\Vulkan\Objects\ModelTypes\PartsFactories.h" />
     <ClInclude Include="heads\Vulkan\Objects\Render\RenderIn.h" />
     <ClInclude Include="heads\Vulkan\Objects\Buffers\CPUBuffer.h" />
     <ClInclude Include="heads\Vulkan\Objects\ModelTypes\ModelFactory.h" />
@@ -159,6 +160,7 @@
     <ClInclude Include="heads\Vulkan\Objects\Render\RenderOut.h" />
     <ClInclude Include="heads\Vulkan\Objects\Syncronization\SyncFactory.h" />
     <ClInclude Include="heads\Vulkan\VulkanRender.h" />
+    <ClInclude Include="heads\Vulkan\VulkanSingletons.h" />
     <ClInclude Include="include\dxc\dxcapi.h" />
     <ClInclude Include="include\dxc\WinAdapter.h" />
     <ClInclude Include="include\ftxui\component\animation.hpp" />

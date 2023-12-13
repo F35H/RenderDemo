@@ -9,8 +9,6 @@
 namespace CPUBuffer {
 
   inline void ConfirmMemory(VkMemoryRequirements* memRequirements, VkMemoryPropertyFlags* allocProperties, VkMemoryAllocateInfo* allocInfo) {
-    
-
     uint32_t i = 0;
     for (; i <= externalProgram->memProperties.memoryTypeCount; ++i) {
       if ((memRequirements->memoryTypeBits & (1 << i)) && (externalProgram->memProperties.memoryTypes[i].propertyFlags & *allocProperties) == *allocProperties) {
@@ -25,6 +23,7 @@ namespace CPUBuffer {
   }; //ConfirmMemoryType
 
   struct GeneralBuffer {
+  
   protected:
     VkBuffer buffer;
     VkDeviceMemory bufferMemory;
@@ -49,6 +48,15 @@ namespace CPUBuffer {
     void ConfirmMemoryType() {
       ConfirmMemory(&memRequirements, &allocProperties, &allocInfo);
     }; //ConfirmMemoryType
+
+  public:
+    const VkBuffer* GetBuffer() {
+      return &buffer;
+    }; //GetBuffer
+
+    uint32_t GetSize() {
+      return buffInfo.size;
+    }; //GetBuffer
   }; //Buffer
 
   struct TextureBuffer {
@@ -56,9 +64,10 @@ namespace CPUBuffer {
   }; //TextureBuffer
 
   struct StageBuffer : GeneralBuffer {
-    StageBuffer(size_t buffSize) {
+    StageBuffer(size_t buffSize, void* srcPtr) {
       buffInfo.size = buffSize;
       buffInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+      buffInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
       auto result = vkCreateBuffer(externalProgram->device, &buffInfo, nullptr, &buffer);
       errorHandler->ConfirmSuccess(result, "Creating Stage Buffer");
       vkGetBufferMemoryRequirements(externalProgram->device, buffer, &memRequirements);
@@ -70,19 +79,23 @@ namespace CPUBuffer {
       errorHandler->ConfirmSuccess(result, "Allocating Stage Buffer Memory");
       vkBindBufferMemory(externalProgram->device, buffer, bufferMemory, 0);
       vkMapMemory(externalProgram->device, bufferMemory, 0, buffSize, 0, &mappedBuffer);
-    }; //StageBuffer
-
-    void CopyData(void* srcPtr) {
       memcpy(mappedBuffer, srcPtr, buffInfo.size);
       vkUnmapMemory(externalProgram->device, bufferMemory);
+    }; //StageBuffer
+
+    void CopyData(VkCommandBuffer cmdBuffer, VkBuffer srcBuffer) {
+
     }; //MapBuffer
   }; //Stage Buffer
 
   struct ModelBuffer : GeneralBuffer {
     
+    bool cpyBool = false;
+
     ModelBuffer(size_t buffSize, INT buffFlags) {
       buffInfo.size = buffSize;
       buffInfo.usage = buffFlags;
+      buffInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
       CreateBuffer();
       vkGetBufferMemoryRequirements(externalProgram->device, buffer, &memRequirements);
       allocProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -92,12 +105,8 @@ namespace CPUBuffer {
       VkResult result = vkAllocateMemory(externalProgram->device, &allocInfo, nullptr, &bufferMemory);
       errorHandler->ConfirmSuccess(result, "Allocating Model Buffer");
       vkBindBufferMemory(externalProgram->device, buffer, bufferMemory, 0);
-
     }; //Model Buffer
 
-    VkBuffer GetBuffer() {
-      return buffer;
-    }; //GetBuffer
   }; //Model Buffer
 
   struct DescPool {
@@ -153,6 +162,7 @@ namespace CPUBuffer {
       auto result = vkCreateCommandPool(externalProgram->device, this, nullptr, &cmdPool);
       errorHandler->ConfirmSuccess(result, "Creating Command Pool");
     }; //CmdPool
+
   }; //CmdPool
 
   struct UniformBuffer : GeneralBuffer {
@@ -229,8 +239,8 @@ namespace CPUBuffer {
     
     std::vector<FrameBuffer> frameBuffers;
     std::vector<UniformBuffer> uniformBuffers;
-    std::vector<ModelBuffer> vertexBuffers;
-    std::vector<ModelBuffer> indexBuffers;
+    std::vector<std::pair<StageBuffer, ModelBuffer>> vertexBuffers;
+    std::vector<std::pair<StageBuffer, ModelBuffer>> indexBuffers;
 
     void AddFrameBuffer(std::vector<VkImageView> attachments, VkRenderPass renderPass, UINT scWidth, UINT scHeight) {
       frameBuffers.emplace_back(FrameBuffer(attachments, renderPass, scWidth, scHeight));
@@ -245,8 +255,6 @@ namespace CPUBuffer {
     }; //AddUniformBuffer
 
     void AddCmdBuffers(UINT cmdBuffNum) {
-      
-
       if (!cmdPool) cmdPool = std::make_unique<CmdPool>(CmdPool());
       cmdPool.value().get()->cmdBuffers.resize(cmdBuffNum);
       
@@ -260,18 +268,29 @@ namespace CPUBuffer {
       errorHandler->ConfirmSuccess(result, "Allocating Command Buffers");
     }; //AddCmdBUffers
 
-    ModelBuffer AddVerticeBuffer(Polyhedra* model) {
-      auto stageBuff = StageBuffer(model->GetBufferSize());
-      stageBuff.CopyData(model->vertices.data());
-      vertexBuffers.emplace_back(ModelBuffer(model->GetBufferSize(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
+    std::pair<StageBuffer, ModelBuffer> AddVerticeBuffer(Polyhedra* model) {
+      StageBuffer(model->GetBufferSize(), model->vertices.data());
+      vertexBuffers.push_back({
+        StageBuffer(model->GetBufferSize(), model->vertices.data()),
+        ModelBuffer(model->GetBufferSize(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)});
       return vertexBuffers[vertexBuffers.size()-1];
     }; //AddVertexBuffer
 
-    ModelBuffer AddIndiceBuffer(Polyhedra* model) {
-      auto stageBuff = StageBuffer(model->GetBufferSize());
-      stageBuff.CopyData(model->indices.data());
-      indexBuffers.emplace_back(ModelBuffer(model->GetBufferSize(),VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
+    std::pair<StageBuffer, ModelBuffer> AddIndiceBuffer(Polyhedra* model) {
+      indexBuffers.push_back({
+        StageBuffer(model->GetBufferSize(), model->indices.data()),
+        ModelBuffer(model->GetBufferSize(),VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT)});
       return indexBuffers[indexBuffers.size() - 1];
     }; //AddVertexBuffer
+
+    VkCommandBuffer GetCommandBuffer(uint16_t indice) {
+      return cmdPool.value().get()->cmdBuffers[indice];
+    }; //GetCommandBuffer
+
+    VkDescriptorSet GetDescriptorSet(uint16_t indice) {
+      return descPool.value().get()->descSets[indice];
+    }; //GetCommandBuffer
+
+    
   }; //BufferCollection
 }; //CPUBuffer

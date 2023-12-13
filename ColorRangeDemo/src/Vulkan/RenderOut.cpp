@@ -62,7 +62,7 @@ Vulkan::VulkanRender::VulkanRender() {
   //Have mainloop be able to accept multiple semaphores
 
   //RenderOut
-  errorHandler = std::make_unique<ErrorHandler>(ErrorHandler());
+  errorHandler = std::make_unique<RenderOut::ErrorHandler>(RenderOut::ErrorHandler());
   externalProgram = new ExternalProgram(1);
   auto polyFact = std::make_unique<PolygonFactory>(PolygonFactory());
   SwapChain* swapChain = new SwapChain(); //Compiler Error, don't make this a smart pointer
@@ -77,6 +77,7 @@ Vulkan::VulkanRender::VulkanRender() {
 
   //Generate
   swapChain->Activate(swapChain->Create);
+
   gfxPipe->AddShaderFile(gfxPipe->Vertex, "shaders/SPIR-5/vert.spv");
   gfxPipe->AddShaderFile(gfxPipe->Fragment, "shaders/SPIR-5/frag.spv");
   gfxPipe->AddShaderBinding(gfxPipe->Vertex, offsetof(Vertex, pos));
@@ -214,35 +215,40 @@ Vulkan::VulkanRender::VulkanRender() {
   }; //for everyFrmae
 
   bufferFact->AddUniformBuffers(numFrames, gfxPipe->descriptorSetLayout);
-  bufferFact->AddCmdBuffers(numFrames);
+  bufferFact->AddCmdBuffers(numFrames + numFrames); //cpyCmdBuffer
 
   for (auto model : externalProgram->getCurrentWindow()->allModels) {
     bufferFact->AddVerticeBuffer(&model);
     bufferFact->AddIndiceBuffer(&model);
   }; //Creating Buffers
 
-  std::vector<VkClearValue> clearColor = {
+  mainLoop->clearColor = {
     {{0.0f, 0.0f, 0.0f, 1.0f}},
     {{1.0f, 0.0f}}
-  }; //clearColor
-
+  }; //clearColor 
 
   //MainLoop Functions
   while (!glfwWindowShouldClose(externalProgram->getCurrentWindow()->window)) {
     glfwPollEvents();
-    mainLoop->bufferFactory = bufferFact;
-    mainLoop->swapChain = swapChain;
-    mainLoop->gfxPipeline = gfxPipe;
-    mainLoop->waitSemaphores = { imageSemaphores[mainLoop->currentFrameIndex] };
-    mainLoop->signalSemaphores = { presentSemaphores[mainLoop->currentFrameIndex] };
-    mainLoop->fences = { qFences[mainLoop->currentFrameIndex] };
+    mainLoop->swapChain =         swapChain;
+    mainLoop->gfxPipeline =       gfxPipe;
+    mainLoop->waitSemaphores =    { imageSemaphores[mainLoop->currentFrameIndex] };
+    mainLoop->signalSemaphores =  { presentSemaphores[mainLoop->currentFrameIndex] };
+    mainLoop->fences =            { qFences[mainLoop->currentFrameIndex] };
+    mainLoop->verticeBuffers =    { &bufferFact->vertexBuffers[externalProgram->getCurrentWindow()->modelIndex] };
+    mainLoop->indiceBuffers  =    { &bufferFact->indexBuffers[externalProgram->getCurrentWindow()->modelIndex] };
+    mainLoop->descSets =          { bufferFact->GetDescriptorSet(mainLoop->currentFrameIndex) };
+    mainLoop->cpyCmdBuffers =     { bufferFact->GetCommandBuffer(numFrames + mainLoop->currentFrameIndex) };
+    mainLoop->presentCmdBuffers = { bufferFact->GetCommandBuffer(mainLoop->currentFrameIndex) };
+    mainLoop->pushConsts =        { uniFact->GetPushConst() };
 
+    uniFact->RotateTrue = externalProgram->getCurrentWindow()->rotateModel;
     uniFact->UpdatePolledInformation();
     bufferFact->uniformBuffers[
       mainLoop->currentFrameIndex].CopyData(uniFact->GetUniformBuffer());
 
       mainLoop->ActivateSyncedInput();
-      mainLoop->ActivateCmdInput(uniFact->GetPushConst(), clearColor);
+      mainLoop->ActivateCmdInput();
       mainLoop->ActivateSyncedOutput();
       mainLoop->ActivateRender();
 
@@ -252,3 +258,4 @@ Vulkan::VulkanRender::VulkanRender() {
   vkDeviceWaitIdle(externalProgram->device);
 
 }; //Vulkan
+
