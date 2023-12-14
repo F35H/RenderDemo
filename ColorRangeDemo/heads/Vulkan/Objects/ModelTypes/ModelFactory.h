@@ -40,18 +40,40 @@ namespace Polytopes {
 
   }; //PolygonFactory
 
-  struct ModelFactory {
-    std::vector<Polytope> models;
-    
-    ModelFactory() {
-      models = {
+  struct PolytopeFactory {
+    uint16_t recurseIndex = 0;
 
-      }; //models
-    }; //ModelFactory
+    PolytopeFactory() = default;
 
-    std::vector<Polytope> GetModels() {
+    std::vector<Polytope> GetPolyhedra() {
+      return {
+        Polyhedra::Triangle(),
+        Polyhedra::Quad(),
+        Polyhedra::Hexagon(),
+
+        Polyhedra::PlatonicSolids::Tetrahedron(),
+        Polyhedra::PlatonicSolids::Cube(),
+        Polyhedra::PlatonicSolids::Octahedron(),
+        Polyhedra::PlatonicSolids::Icosahedron(),
+        Polyhedra::PlatonicSolids::Dodecahedron(),
+
+        Polyhedra::ArchemedianSolids::Cuboctahedron(),
+        Polyhedra::ArchemedianSolids::Icosidodecahedron(),
+        Polyhedra::ArchemedianSolids::TruncatedTetrahedron()
+      }; //polytopes;
+    }; //GetModel
+
+    std::vector<Polytope> GetFileModels(std::string dir) {
+      LoadModels();
       return models;
     }; //GetPolyhedra
+
+  private:
+    Assimp::Importer importer;
+    std::vector<Polytope> models;
+    void LoadModels() {
+
+    }; //LoadModels
   }; //ModelFactory
 
 }; //Polytopes
