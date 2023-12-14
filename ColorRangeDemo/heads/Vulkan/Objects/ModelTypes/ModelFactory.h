@@ -3,42 +3,56 @@
 #include "Vulkan/GeneralIncludes.h"
 #include "Vulkan/Objects/ModelTypes/Polyhedra.h"
 
-struct PolygonFactory {
-  enum {
-    Triangle = 0,
-    Quad,
-    Hexagon,
-    Tetrahedron,
-    Cube
-  }; //enum
+namespace Polytopes {
+  struct PolygonFactory {
+    enum {
+      Triangle = 0,
+      Quad,
+      Hexagon,
+      Tetrahedron,
+      Cube
+    }; //enum
 
-  std::vector<Polyhedra> polytopes;
-  //std::vector<EdgeMesh*> polytopeEdges;
+    std::vector<Polytope> polytopes;
+    //std::vector<EdgeMesh*> polytopeEdges;
 
-  PolygonFactory() {
-    polytopes = {
-      Polytopes::Triangle(),
-      Polytopes::Quad(),
-      Polytopes::Hexagon(),
+    PolygonFactory() {
+      polytopes = {
+        Polyhedra::Triangle(),
+        Polyhedra::Quad(),
+        Polyhedra::Hexagon(),
 
-      Polytopes::PlatonicSolids::Tetrahedron(),
-      Polytopes::PlatonicSolids::Cube(),
-      Polytopes::PlatonicSolids::Octahedron(),
-      Polytopes::PlatonicSolids::Icosahedron(),
-      Polytopes::PlatonicSolids::Dodecahedron(),
+        Polyhedra::PlatonicSolids::Tetrahedron(),
+        Polyhedra::PlatonicSolids::Cube(),
+        Polyhedra::PlatonicSolids::Octahedron(),
+        Polyhedra::PlatonicSolids::Icosahedron(),
+        Polyhedra::PlatonicSolids::Dodecahedron(),
     
-      Polytopes::ArchemedianSolids::Cuboctahedron(),
-      Polytopes::ArchemedianSolids::Icosidodecahedron(),
-      Polytopes::ArchemedianSolids::TruncatedTetrahedron()
-    }; //polytopes
+        Polyhedra::ArchemedianSolids::Cuboctahedron(),
+        Polyhedra::ArchemedianSolids::Icosidodecahedron(),
+        Polyhedra::ArchemedianSolids::TruncatedTetrahedron()
+      }; //polytopes
+    }; //PolygonFactory
+
+    std::vector<Polytope> GetPolyhedra() {
+      return polytopes;
+    }; //GetPolyhedra
+
   }; //PolygonFactory
 
-  std::vector<Polyhedra> GetPolyhedra() {
-    return polytopes;
-  }; //GetPolyhedra
+  struct ModelFactory {
+    std::vector<Polytope> models;
+    
+    ModelFactory() {
+      models = {
 
+      }; //models
+    }; //ModelFactory
 
-  //std::vector<Edges*> GetPolyhedraEdges() {
-    //return polytopeEdges;
-  //}; //GetPolyhedraEdges
-}; //PolygonFactory
+    std::vector<Polytope> GetModels() {
+      return models;
+    }; //GetPolyhedra
+  }; //ModelFactory
+
+}; //Polytopes
+

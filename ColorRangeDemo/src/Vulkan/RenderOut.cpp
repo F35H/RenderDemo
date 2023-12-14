@@ -25,7 +25,7 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
     if (currentWindow->modelIndex < 0) { currentWindow->modelIndex = currentWindow->allModels.size() - 1; };
     if (currentWindow->modelIndex > currentWindow->allModels.size() - 1) { currentWindow->modelIndex = 0; };
 
-    currentWindow->currentModel = std::make_shared<Polyhedra>(currentWindow->allModels[currentWindow->modelIndex]);
+    currentWindow->currentModel = std::make_shared<Polytope>(currentWindow->allModels[currentWindow->modelIndex]);
   }; //if (action == GLFW_RELEASE)
 }; //keyboardCallback
 
@@ -64,7 +64,7 @@ Vulkan::VulkanRender::VulkanRender() {
   //RenderOut
   errorHandler = std::make_unique<RenderOut::ErrorHandler>(RenderOut::ErrorHandler());
   externalProgram = new ExternalProgram(1);
-  auto polyFact = std::make_unique<PolygonFactory>(PolygonFactory());
+  auto polyFact = std::make_unique<Polytopes::PolygonFactory>(Polytopes::PolygonFactory());
   SwapChain* swapChain = new SwapChain(); //Compiler Error, don't make this a smart pointer
   auto gfxPipe = std::make_shared<GFXPipeline>(GFXPipeline());
   auto uniFact = std::make_unique<UniformFactory>(UniformFactory());
@@ -73,7 +73,7 @@ Vulkan::VulkanRender::VulkanRender() {
   auto mainLoop = std::make_unique<MainLoop>(MainLoop());
 
   externalProgram->getCurrentWindow()->allModels = polyFact->GetPolyhedra();
-  externalProgram->getCurrentWindow()->currentModel = std::make_shared<Polyhedra>(externalProgram->getCurrentWindow()->allModels[0]);
+  externalProgram->getCurrentWindow()->currentModel = std::make_shared<Polytope>(externalProgram->getCurrentWindow()->allModels[0]);
 
   //Generate
   swapChain->Activate(swapChain->Create);
@@ -90,7 +90,7 @@ Vulkan::VulkanRender::VulkanRender() {
   gfxPipe->AddPushConst();
   gfxPipe->Activate(swapChain->renderPass);
 
-  uniFact->Actiate(static_cast<float>(swapChain->imageExtent.width) / static_cast<float>(swapChain->imageExtent.height));
+  uniFact->Activate(static_cast<float>(swapChain->imageExtent.width) / static_cast<float>(swapChain->imageExtent.height));
 
   switch (UIValues::gamutLineage) {
   case UILineageEnums::GamutLineage::CIE:
@@ -215,7 +215,7 @@ Vulkan::VulkanRender::VulkanRender() {
   }; //for everyFrmae
 
   bufferFact->AddUniformBuffers(numFrames, gfxPipe->descriptorSetLayout);
-  bufferFact->AddCmdBuffers(numFrames + numFrames); //cpyCmdBuffer
+  bufferFact->AddCmdBuffers(numFrames + numFrames + numFrames); //cpyCmdBuffer
 
   for (auto model : externalProgram->getCurrentWindow()->allModels) {
     bufferFact->AddVerticeBuffer(&model);
@@ -235,12 +235,12 @@ Vulkan::VulkanRender::VulkanRender() {
     mainLoop->waitSemaphores =    { imageSemaphores[mainLoop->currentFrameIndex] };
     mainLoop->signalSemaphores =  { presentSemaphores[mainLoop->currentFrameIndex] };
     mainLoop->fences =            { qFences[mainLoop->currentFrameIndex] };
-    mainLoop->verticeBuffers =    { &bufferFact->vertexBuffers[externalProgram->getCurrentWindow()->modelIndex] };
-    mainLoop->indiceBuffers  =    { &bufferFact->indexBuffers[externalProgram->getCurrentWindow()->modelIndex] };
-    mainLoop->descSets =          { bufferFact->GetDescriptorSet(mainLoop->currentFrameIndex) };
+    mainLoop->verticeBuffers =    { &bufferFact->vertexBuffers[externalProgram->getCurrentWindow()->modelIndex], &bufferFact->vertexBuffers[externalProgram->getCurrentWindow()->modelIndex] };
+    mainLoop->indiceBuffers  =    { &bufferFact->indexBuffers[externalProgram->getCurrentWindow()->modelIndex], &bufferFact->indexBuffers[externalProgram->getCurrentWindow()->modelIndex] };
+    mainLoop->descSets =          { bufferFact->GetDescriptorSet(mainLoop->currentFrameIndex), bufferFact->GetDescriptorSet(mainLoop->currentFrameIndex) };
     mainLoop->cpyCmdBuffers =     { bufferFact->GetCommandBuffer(numFrames + mainLoop->currentFrameIndex) };
-    mainLoop->presentCmdBuffers = { bufferFact->GetCommandBuffer(mainLoop->currentFrameIndex) };
-    mainLoop->pushConsts =        { uniFact->GetPushConst() };
+    mainLoop->presentCmdBuffers = { bufferFact->GetCommandBuffer(mainLoop->currentFrameIndex), bufferFact->GetCommandBuffer(numFrames + numFrames + mainLoop->currentFrameIndex) };
+    mainLoop->pushConsts =        { uniFact->GetPushConst(), uniFact->GetPushConst() };
 
     uniFact->RotateTrue = externalProgram->getCurrentWindow()->rotateModel;
     uniFact->UpdatePolledInformation();

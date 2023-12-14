@@ -1264,13 +1264,13 @@
     <ClInclude Include="heads\Vulkan\Objects\Render\RenderIn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="heads\Vulkan\Objects\Buffers\CPUBuffer.h">
+    <ClInclude Include="heads\Vulkan\Objects\Buffers\CommonBuffers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="heads\Vulkan\Objects\ModelTypes\ModelFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="heads\Vulkan\Objects\Buffers\GPUBuffer.h">
+    <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="heads\Vulkan\Objects\Render\RenderOut.h">
@@ -1288,7 +1288,13 @@
     <ClInclude Include="heads\Vulkan\VulkanSingletons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="heads\Vulkan\Objects\ModelTypes\PartsFactories.h">
+    <ClInclude Include="heads\Vulkan\Objects\ModelTypes\Primitives.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData\PushConsts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData\UBOs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

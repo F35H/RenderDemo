@@ -136,8 +136,8 @@ struct Window {
   bool rotateModel = false;
   int modelIndex = 0;
 
-  std::vector<Polyhedra> allModels;
-  std::shared_ptr<Polyhedra> currentModel;
+  std::vector<Polytope> allModels;
+  std::shared_ptr<Polytope> currentModel;
 public:
 
   void AddKeyboardCallBacks();

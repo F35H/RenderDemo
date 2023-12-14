@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/Objects/ModelTypes/PartsFactories.h>
+#include <vulkan/Objects/ModelTypes/Primitives.h>
 
 //Indices 
 //Triangle
@@ -21,99 +21,8 @@
 //4,6,3,
 //4,5,6
 
-
-struct Vertex {
-  glm::vec3 pos;
-  glm::vec3 color;
-  glm::vec3 norm;
-}; //Vertex
-
-class Polyhedra {
-  std::optional<uint16_t> recurseIndex;
-
-protected:
-
-
-public:
-  uint16_t edgeCount; //temporary until face class comes into play
-  std::vector<Vertex> vertices;
-  std::vector<uint16_t> indices;
-
-  size_t GetBufferSize() {
-    return sizeof(Vertex) * vertices.size();
-  }; //GetBufferSize
-
-  size_t GetIndiceSize() {
-    return indices.size();
-  }; //GetBufferSize
-
-  void Shrink(uint16_t divisor) {
-    if (!recurseIndex) recurseIndex = vertices.size()-1;
-    if (recurseIndex.value() > vertices.size()) { recurseIndex.reset(); return; };
-    vertices[recurseIndex.value()].pos /= divisor;
-    recurseIndex.value() -= 1;
-    Shrink(divisor);
-  }; //Shrink
-
-  void GenerateNorm() {
-    for (size_t i = 0; i < indices.size(); i += 3)
-    { 
-      // Get the face normal
-      auto vector1 = vertices[indices[(size_t)i + 1]].pos - vertices[indices[i]].pos;
-      auto vector2 = vertices[indices[(size_t)i + 2]].pos - vertices[indices[i]].pos;
-      auto faceNormal = glm::cross(vector1, vector2);
-      glm::normalize(faceNormal);
-
-      // Add the face normal to the 3 vertices normal touching this face
-      vertices[indices[i]].norm             += faceNormal;
-      vertices[indices[(size_t)i + 1]].norm += faceNormal;
-      vertices[indices[(size_t)i + 2]].norm += faceNormal;
-    }
-
-    for (size_t i = 0; i < vertices.size(); ++i) glm::normalize(-vertices[i].norm);
-  }; //GenerateNorm
-}; //Polyhedra
-
-class EdgeMesh {
-  std::optional<uint16_t> recurseIndex;
-  Polyhedra* polyhedra;
-public:
-  std::vector<Polyhedra> edges;
-
-  EdgeMesh(Polyhedra* polyhedra) {
-    CreateEdges();
-  }; //Edge
-
-  void CreateEdges() {
-    if (!recurseIndex) recurseIndex = polyhedra->edgeCount;
-    if (recurseIndex.value() > polyhedra->edgeCount) return;
-    CreateEdge(&polyhedra->vertices[recurseIndex.value()],&polyhedra->vertices[recurseIndex.value() - 1]);
-    recurseIndex.value() -= 1;
-    CreateEdges();
-  }; //EdgeMesh
-
-  void CreateEdge(Vertex* initVertice, Vertex* scndVertice) {
-    auto polyhedra = new Polyhedra();
-
-    polyhedra->vertices.resize(4);
-
-    polyhedra->vertices[0].pos = initVertice->pos;
-    polyhedra->vertices[1].pos = scndVertice->pos;
-    polyhedra->vertices[2].pos = initVertice->norm;
-    polyhedra->vertices[3].pos = scndVertice->norm;
-
-    polyhedra->vertices[0].color = { 0,0,0 };
-    polyhedra->vertices[1].color = { 0,0,0 };
-    polyhedra->vertices[2].color = { 0,0,0 };
-    polyhedra->vertices[3].color = { 0,0,0 };
-
-    polyhedra->indices = { 0,1,2,2,3,0 };
-    edges.push_back(*polyhedra);
-  }; //CreateEdge
-};
-
-namespace Polytopes {
-  struct Triangle : Polyhedra {
+namespace Polyhedra {
+  struct Triangle : Polytope {
     Triangle() {
       edgeCount = 3;
       vertices.resize(3);
@@ -132,7 +41,7 @@ namespace Polytopes {
     }; //Triangle Ctor
   }; //Triangle
 
-  struct Quad : Polyhedra {
+  struct Quad : Polytope {
     Quad() {
       edgeCount = 4;
       vertices.resize(4);
@@ -156,7 +65,7 @@ namespace Polytopes {
     }; //Quad Ctor
   }; //Quad
 
-  struct Hexagon : Polyhedra {
+  struct Hexagon : Polytope {
     Hexagon() {
       edgeCount = 6;
       vertices.resize(7);
@@ -191,7 +100,7 @@ namespace Polytopes {
   }; //Hexagon
 
   namespace PlatonicSolids {
-  struct Tetrahedron : Polyhedra {
+  struct Tetrahedron : Polytope {
     Tetrahedron() {
       edgeCount = 6;
       vertices.resize(4);
@@ -219,7 +128,7 @@ namespace Polytopes {
     }; //Tetrahedon Ctor
   }; //Tetrahedron
 
-  struct Cube : Polyhedra {
+  struct Cube : Polytope {
     Cube() {
       edgeCount = 12;
       vertices.resize(8);
@@ -268,7 +177,7 @@ namespace Polytopes {
     }; //Cube Ctor
   }; //Cube
 
-  struct Octahedron : Polyhedra {
+  struct Octahedron : Polytope {
     Octahedron() {
       edgeCount = 12;
       vertices.resize(6);
@@ -305,7 +214,7 @@ namespace Polytopes {
   
   }; //Octahedron
 
-  struct Icosahedron : Polyhedra {
+  struct Icosahedron : Polytope {
     Icosahedron() {
       edgeCount = 30;
       vertices.resize(12);
@@ -368,7 +277,7 @@ namespace Polytopes {
     }; //Icosahedron
   }; //Icosahedron
 
-  struct Dodecahedron : Polyhedra {
+  struct Dodecahedron : Polytope {
     
     Dodecahedron() {
       edgeCount = 30;
@@ -478,7 +387,7 @@ namespace Polytopes {
   }; //PlatonicSolids
 
   namespace ArchemedianSolids {
-    struct Cuboctahedron : Polyhedra {
+    struct Cuboctahedron : Polytope {
       Cuboctahedron() {
         edgeCount = 24;
         vertices.resize(12);
@@ -547,7 +456,7 @@ namespace Polytopes {
       
     }; //CubOctahedron
 
-    struct Icosidodecahedron : Polyhedra {
+    struct Icosidodecahedron : Polytope {
       Icosidodecahedron() {
         edgeCount = 60;
         
@@ -698,7 +607,7 @@ namespace Polytopes {
     }; //Icosidodecahedron
 
 
-    struct TruncatedTetrahedron : Polyhedra {
+    struct TruncatedTetrahedron : Polytope {
       TruncatedTetrahedron() {
         edgeCount = 18;
 
@@ -765,7 +674,7 @@ namespace Polytopes {
       }; //TruncatedTetrahedron 
     }; //TruncatedTetrahedron 
 
-    struct TruncatedCube : Polyhedra {
+    struct TruncatedCube : Polytope {
       TruncatedCube() {
         edgeCount = 36;
         vertices.resize(24);
@@ -849,7 +758,7 @@ namespace Polytopes {
     }; //TruncatedCube
 
 
-    struct TruncatedOctahedron : Polyhedra {
+    struct TruncatedOctahedron : Polytope {
       TruncatedOctahedron() {
         edgeCount = 36;
         vertices.resize(24);
@@ -977,7 +886,7 @@ namespace Polytopes {
       }; //TruncatedOctahedron
 
 
-      struct TruncatedIcosahedron : Polyhedra {
+      struct TruncatedIcosahedron : Polytope {
         TruncatedIcosahedron() {
           edgeCount = 36;
           vertices.resize(24);

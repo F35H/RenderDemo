@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vulkan/Objects/Buffers/CPUBuffer.h"
+#include "Vulkan/Objects/Buffers/CommonBuffers.h"
 
 struct Semaphore {
   VkSemaphore semaphore;

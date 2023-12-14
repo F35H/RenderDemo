@@ -771,7 +771,7 @@ namespace RenderIn {
           verticeBuffers[recurseIndex.value()]->second.GetBuffer(), offsets);
         vkCmdBindIndexBuffer(
           presentCmdBuffers[recurseIndex.value()],
-          *indiceBuffers[recurseIndex.value()]->second.GetBuffer(), 0, VK_INDEX_TYPE_UINT16);
+          *indiceBuffers[recurseIndex.value()]->second.GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
       //TriggerUniformInput
       vkCmdPushConstants(
