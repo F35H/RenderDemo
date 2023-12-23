@@ -76,10 +76,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\gProj\C++\RenderDemo\ColorRangeDemo\include;C:\gProj\C++\RenderDemo\ColorRangeDemo\heads</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\gProj\C++\RenderDemo\ColorRangeDemo\bin;C:\gProj\C++\RenderDemo\ColorRangeDemo\libs;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -90,12 +95,17 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\gProj\C++\RenderDemo\ColorRangeDemo\include;C:\gProj\C++\RenderDemo\ColorRangeDemo\heads</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\gProj\C++\RenderDemo\ColorRangeDemo\bin;C:\gProj\C++\RenderDemo\ColorRangeDemo\libs;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -104,13 +114,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>include;heads;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\gProj\C++\RenderDemo\ColorRangeDemo\include;C:\gProj\C++\RenderDemo\ColorRangeDemo\heads</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>libs;bin;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\gProj\C++\RenderDemo\ColorRangeDemo\bin;C:\gProj\C++\RenderDemo\ColorRangeDemo\libs;libs;bin;</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);glfw3.lib;glfw3dll.lib;</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -122,12 +133,17 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\gProj\C++\RenderDemo\ColorRangeDemo\include;C:\gProj\C++\RenderDemo\ColorRangeDemo\heads</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\gProj\C++\RenderDemo\ColorRangeDemo\bin;C:\gProj\C++\RenderDemo\ColorRangeDemo\libs;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -136,9 +152,16 @@
     <ClCompile Include="heads\Vulkan\Objects\ModelTypes\Polyhedra.h" />
     <ClCompile Include="include\glm\detail\glm.cpp" />
     <ClCompile Include="src\ConsoleUI\UISingletons.cpp" />
-    <ClCompile Include="src\Vulkan\RenderOut.cpp" />
+    <ClCompile Include="src\Vulkan\Objects\Buffers\CommonBuffers.cpp" />
+    <ClCompile Include="src\Vulkan\Objects\Render\RenderIn\GfxPipe.cpp" />
+    <ClCompile Include="src\Vulkan\Objects\Render\RenderIn\MainLoop.cpp" />
+    <ClCompile Include="src\Vulkan\Objects\Render\RenderIn\SwapChain.cpp" />
+    <ClCompile Include="src\Vulkan\Objects\Render\RenderOut.cpp" />
+    <ClCompile Include="src\Vulkan\Objects\Syncronization\GPUSyncFactory.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanRender.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Library Include="libs\assimp-vc143-mtd.lib" />
     <Library Include="libs\ftxui-component.lib" />
     <Library Include="libs\ftxui-dom.lib" />
     <Library Include="libs\ftxui-screen.lib" />
@@ -160,6 +183,8 @@
     <ClInclude Include="heads\Vulkan\Objects\ModelTypes\ModelFactory.h" />
     <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData.h" />
     <ClInclude Include="heads\Vulkan\Objects\Render\RenderOut.h" />
+    <ClInclude Include="heads\Vulkan\Objects\Syncronization\CPUSyncFactory.h" />
+    <ClInclude Include="heads\Vulkan\Objects\Syncronization\GPUSyncFactory.h" />
     <ClInclude Include="heads\Vulkan\Objects\Syncronization\SyncFactory.h" />
     <ClInclude Include="heads\Vulkan\VulkanRender.h" />
     <ClInclude Include="heads\Vulkan\VulkanSingletons.h" />

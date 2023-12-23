@@ -18,10 +18,10 @@ layout(location = 3) out vec3 fragVert;
 void main() {
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
     
-    //vec4 interNorm = transpose(inverse(ubo.model)) * vec4(inNorm, 1.0f);
+    //vec4 interNorm = transpose(inverse(mat3(ubo.model))) * vec4(inNorm, 1.0f);
     
-    fragNorm = vec3(ubo.model * vec4(inNorm, 1.0f));
-    fragVert = vec3(ubo.model * vec4(inPosition, 1.0f));
+    fragNorm = transpose(inverse(mat3(ubo.model))) * vec3(inNorm);
+    fragVert = transpose(inverse(mat3(ubo.model))) * vec3(inPosition);
     flatFragColor = inColor;
     smoothFragColor = inColor;
 }

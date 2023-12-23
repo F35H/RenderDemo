@@ -56,7 +56,10 @@ struct UniformFactory {
 
   std::vector<UniformData::Uniform*> Uniforms;
 
-  char RotateTrue = 0;
+  bool RotateTrue       = false;
+  bool FreeMove         = false;
+  glm::vec3* CamPos;
+  glm::vec3* CamDegree;
 
   enum UniformType {
     Properties = 0,
@@ -114,14 +117,9 @@ struct UniformFactory {
     previousTime = cT;
 
     if (RotateTrue) {
-      if (degree <= degreeLimit / 2 && RotateTrue) {
-        static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->model =
-          glm::rotate(glm::mat4(1.0f), glm::radians(degree), glm::vec3(0.0f, 0.0f, 1.0f));
-      }
-      if (RotateTrue) {
-        static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->model =
-          glm::rotate(glm::mat4(1.0f), glm::radians(degree), glm::vec3(1.0f, 1.0f, 0.0f));
-      }
+      static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->view =
+        glm::rotate(static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->
+          view, glm::radians(90.0f * delta), glm::vec3(0.0f, 1.0f, 0.0f));
 
       if (degree < degreeLimit) { degree += delta * degreeIncrement; };
       if (degree >= degreeLimit) { degree = 0; };

@@ -19,7 +19,7 @@ class Polytope {
 public:
   uint16_t edgeCount; //temporary until face class comes into play
   std::vector<Vertex> vertices;
-  std::vector<uint16_t> indices;
+  std::vector<uint32_t> indices;
 
   size_t GetBufferSize() {
     return sizeof(Vertex) * vertices.size();

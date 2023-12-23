@@ -30,7 +30,25 @@
     <ClCompile Include="heads\Vulkan\Objects\ModelTypes\Polyhedra.h">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Vulkan\RenderOut.cpp">
+    <ClCompile Include="src\Vulkan\Objects\Render\RenderOut.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\Objects\Render\RenderIn\MainLoop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\Objects\Render\RenderIn\SwapChain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\VulkanRender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\Objects\Render\RenderIn\GfxPipe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\Objects\Syncronization\GPUSyncFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\Objects\Buffers\CommonBuffers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,6 +59,7 @@
     <Library Include="libs\vulkan-1.lib" />
     <Library Include="libs\glfw3.lib" />
     <Library Include="libs\glfw3dll.lib" />
+    <Library Include="libs\assimp-vc143-mtd.lib" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="heads\ConsoleUI\UISingletons.h">
@@ -1282,10 +1301,7 @@
     <ClInclude Include="heads\Vulkan\GeneralIncludes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="heads\Vulkan\Objects\Syncronization\SyncFactory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="heads\Vulkan\VulkanSingletons.h">
+    <ClInclude Include="heads\Vulkan\Objects\Syncronization\GPUSyncFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="heads\Vulkan\Objects\ModelTypes\Primitives.h">
@@ -1295,6 +1311,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData\UBOs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heads\Vulkan\Objects\Syncronization\CPUSyncFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heads\Vulkan\Objects\Syncronization\SyncFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heads\Vulkan\VulkanSingletons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

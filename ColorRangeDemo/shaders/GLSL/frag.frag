@@ -26,8 +26,10 @@
 #define PHONG                 3
 #define BLINPHONG             4
 #define GOOCH                 5
-#define TOON                  6
-#define GOOCHPHONG            7
+#define GOOCHPHONG            6
+#define TOONNOEDGE            7
+#define TOONFRESNALEDGE       8
+#define TOONGOOCHEDGE         9
 
 //FILTERS
 #define DEUTERANOPIA          1
@@ -35,14 +37,13 @@
 #define TRITANOPIA            3
 #define GRAYSCALE             4
 
-
 //COLORGAMUT
 #define COLORGAMUT            int(PC.matProp[0][0])           
 
 //LIGHTING AND SHADING
-#define POINTLIGHTCOLOR       vec3(1.0f, 1.0f, 1.0f)
-#define POINTLIGHTPOS         vec3(0.0f, 2.0f, 10.0f)
-#define POINTLIGHTINTENSITY   10.0f
+#define POINTLIGHTCOLOR       vec3(1.0f, 0.0f, 0.0f)
+#define POINTLIGHTPOS         vec3(0.0f, 2.0f, 2.0f)
+#define POINTLIGHTINTENSITY   15.0f
 #define AMBILIGHTCOLOR        vec3(0.1f, 0.1f, 0.1f)           
 #define AMBIINTENSITY         0.1f           
 #define SHADINGTYPE           int(PC.lighting[0][0])           
@@ -50,6 +51,7 @@
 //FILTERS
 #define FILTERTYPE             int(PC.lighting[0][1])
 #define FILTERSEVERITY         1
+
 
 layout(location = 0) in flat vec3 flatFragColor;
 layout(location = 1) in smooth vec3 smoothFragColor;
@@ -63,6 +65,10 @@ layout( push_constant ) uniform constants
 	mat4 matProp;
 	mat4 lighting;
 } PC;
+
+float lerp(float a, float b, float w) {
+  return a + w*(b-a);
+}
 
 uvec3 pcg3d(uvec3 v) {
 
@@ -246,9 +252,10 @@ void main() {
     }//GOURAND
      break;
     case PHONG: {
-      vec3 lightDir = POINTLIGHTPOS - fragPos;
+      vec3 lightDir = abs(POINTLIGHTPOS - fragPos);
+
       float distance = length(lightDir);
-      distance = distance * distance;
+      distance = distance;
       lightDir = normalize(lightDir);
       float shininess = 16.0;
 
@@ -268,7 +275,7 @@ void main() {
     }
     break;
     case BLINPHONG: {
-      vec3 lightDir = POINTLIGHTPOS - fragPos;
+      vec3 lightDir = abs(POINTLIGHTPOS - fragPos);
       float distance = length(lightDir);
       distance = distance * distance;
       lightDir = normalize(lightDir);
@@ -290,7 +297,7 @@ void main() {
     }
     break;
     case GOOCHPHONG: {
-      vec3 lightDir = POINTLIGHTPOS - fragPos;
+      vec3 lightDir = abs(POINTLIGHTPOS - fragPos);
       
       vec3 kBlue =   vec3(0.0f,0.0f,1.0f); 
       vec3 kYellow = vec3(0.0f,1.0f,1.0f);
@@ -329,24 +336,24 @@ void main() {
     } //GOOCHPHONG
     break;
     case GOOCH: {
-      vec3 lightDir = POINTLIGHTPOS - fragPos;
+      vec3 lightDir = abs(POINTLIGHTPOS - fragPos);
       
       vec3 kBlue =   vec3(0.0f,0.0f,1.0f); 
       vec3 kYellow = vec3(0.0f,1.0f,1.0f);
       
       float alpha = 0.5f;
-      float beta = 0.5f;
+      float beta = 0.9f;
 
-      float difRef = 1.0f;
+      float difRef = 0.5f;
 
       vec3 kCool = kBlue   + alpha * difRef;
-      vec3 kWarm = kYellow + beta* difRef;
+      vec3 kWarm = kYellow + beta * difRef;
       convertedColor = (((1+dot(lightDir, fragNorm))/2) * (kCool)) + (((1-dot(lightDir, fragNorm))/2) * (kWarm));
       convertedColor/2;
       convertedColor + 0.5f;
     } //GOOCH
     break;
-    case TOON: {    
+    case TOONNOEDGE: {    
       vec3 lightDir = POINTLIGHTPOS - fragPos;
       float diffuse = max(dot(lightDir, fragNorm), 0.0);
       vec4 color;
@@ -360,8 +367,82 @@ void main() {
       } else {
         color = vec4(vec3(0.2), 1.0);
       }
-      convertedColor = (vec3(color)) * convertedColor;
+
+      convertedColor = vec3(color) * POINTLIGHTCOLOR * convertedColor;
+
     } //TOON
+    break;
+    case TOONFRESNALEDGE: {
+      vec3 lightDir = POINTLIGHTPOS - fragPos;
+      float diffuse = max(dot(lightDir, fragNorm), 0.0);
+      vec4 color;
+
+      if (diffuse > pow(0.95, POINTLIGHTINTENSITY)) {
+        color = vec4(vec3(1.0), 1.0);
+      } else if (diffuse > pow(0.7, POINTLIGHTINTENSITY)) {
+        color = vec4(vec3(0.6), 1.0);
+      } else if (diffuse > pow(0.4, POINTLIGHTINTENSITY)) {
+        color = vec4(vec3(0.4), 1.0);
+      } else {
+        color = vec4(vec3(0.2), 1.0);
+      }
+
+      convertedColor = (vec3(color)) * convertedColor;
+
+      vec3 viewDir = normalize(-fragPos);
+      float edge1 = 1 - 0.7; //width
+      float edge2 = edge1 + 0.1; //Softness
+      float fresnel = pow(1.0 - clamp(dot(fragNorm, viewDir), 0,1), 2);
+      vec3 outline = lerp(1, smoothstep(edge1, edge2, fresnel), step(0, edge1)) * vec3(0.1,0.1,0.1);
+      if ((convertedColor.r < outline.r) || (convertedColor.g < outline.g) || (convertedColor.b < outline.b)) {convertedColor *= outline; };
+      
+      viewDir = normalize(-fragPos);
+      edge1 = 1 - 0.7; //width
+      edge2 = edge1 + 0.1; //Softness
+      fresnel = pow(1.0 - clamp(dot(fragNorm, viewDir), 0,1), 2);
+      outline = lerp(1, smoothstep(edge1, edge2, fresnel), step(0, edge1)) * vec3(1.0,1.0,1.0);
+      //if ((convertedColor.r > outline.r) || (convertedColor.g > outline.g) || (convertedColor.b > outline.b)) {convertedColor *= outline; };
+
+      //convertedColor *= outline;
+    } //TOONFRESNAL
+    break;
+    case TOONGOOCHEDGE: {    
+      vec3 lightDir = abs(normalize(-fragPos) - fragPos);
+      float diffuse = max(dot(lightDir, fragNorm), 0.0);
+      vec4 color;
+
+      if (diffuse > pow(0.95, POINTLIGHTINTENSITY)) {
+        color = vec4(vec3(1.0), 1.0);
+      } else if (diffuse > pow(0.7, POINTLIGHTINTENSITY)) {
+        color = vec4(vec3(0.6), 1.0);
+      } else if (diffuse > pow(0.4, POINTLIGHTINTENSITY)) {
+        color = vec4(vec3(0.4), 1.0);
+      } else {
+        color = vec4(vec3(0.2), 1.0);
+      }
+
+      convertedColor = (vec3(color)) * (POINTLIGHTCOLOR) * convertedColor;
+        
+      vec3 kBlue =   convertedColor; 
+      vec3 kYellow = vec3(0.1f,0.1f,0.1f);
+      
+      float alpha = 0.1f;
+      float beta = 0.1;
+
+      float difRef = 1.0f;
+
+      vec3 kCool = kBlue   + alpha * difRef;
+      vec3 kWarm = kYellow + beta* difRef;
+      convertedColor = (((1+dot(lightDir, fragNorm))/2) * (kCool)) + (((1-dot(lightDir, fragNorm))/2) * (kWarm));
+      convertedColor/2;
+      convertedColor + 0.5f;
+
+      lightDir = abs(POINTLIGHTPOS - fragPos);
+      convertedColor = (((1+dot(lightDir, fragNorm))/2) * (kCool)) + (((1-dot(lightDir, fragNorm))/2) * (kWarm));
+      convertedColor/2;
+      convertedColor + 0.5f;
+
+    } //TOONGOOCHEDGE
     break;
   };//SHADING
 
@@ -636,6 +717,9 @@ void main() {
       convertedColor.z = grayColor;
       break;
   }; //switch
+
+
+
 
   outColor = convertedColor;
 } //main
