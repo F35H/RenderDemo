@@ -1304,7 +1304,7 @@
     <ClInclude Include="heads\Vulkan\Objects\Syncronization\GPUSyncFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="heads\Vulkan\Objects\ModelTypes\Primitives.h">
+    <ClInclude Include="heads\Vulkan\Objects\ModelTypes\ModelPrimitives.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData\PushConsts.h">
@@ -1320,6 +1320,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="heads\Vulkan\VulkanSingletons.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Users\micha\Downloads\stb-master(1)\stb-master\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

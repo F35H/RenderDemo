@@ -115,7 +115,7 @@ void MainLoop::TriggerRenderInput() {
       gfxPipelines[i]->graphicsPipeline);
 
     if (verticeBuffers.size() > i) {
-      if (verticeBuffers[i]->second.cpyBool) {
+      if (verticeBuffers[i]->second.fromStagedBuffer) {
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(
           presentCmdBuffers[recurseIndex.value()], 0, 1,
@@ -125,7 +125,7 @@ void MainLoop::TriggerRenderInput() {
     }; //has_value
 
     if (indiceBuffers.size() > i) {
-      if (indiceBuffers[i]->second.cpyBool) {
+      if (indiceBuffers[i]->second.fromStagedBuffer) {
         vkCmdBindIndexBuffer(
           presentCmdBuffers[recurseIndex.value()],
           *indiceBuffers[i]->second.GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
@@ -154,12 +154,12 @@ void MainLoop::TriggerRenderInput() {
       }; //descSets
     }; //pushConsts
 
-    if (indiceBuffers.size()> i && indiceBuffers[i]->second.cpyBool) {
+    if (indiceBuffers.size()> i && indiceBuffers[i]->second.fromStagedBuffer) {
       vkCmdDrawIndexed(
         presentCmdBuffers[recurseIndex.value()],
         indiceSizes[i], 1, 0, 0, 0);
     } //if inficeBuffers
-    else if (verticeBuffers.size()> i && verticeBuffers[i]->second.cpyBool) {
+    else if (verticeBuffers.size()> i && verticeBuffers[i]->second.fromStagedBuffer) {
       vkCmdDraw(presentCmdBuffers[recurseIndex.value()],
         verticeSizes[i], 1, 0, 0);
     } //else if vertices
@@ -188,7 +188,9 @@ void MainLoop::TriggerCpyCmd() {
   
   size_t i;
   for (i = gfxPipelines.size() - 1; i < gfxPipelines.size(); --i) {
-    if (verticeBuffers.size()>i) {
+    if (verticeBuffers.size()>i &&
+      !verticeBuffers[i]->second.fromStagedBuffer &&
+      verticeBuffers[i]->first.writtenTo) {
       verticeCpy[i].size = verticeBuffers[i]->first.GetSize();
       
       vkCmdCopyBuffer(
@@ -197,10 +199,13 @@ void MainLoop::TriggerCpyCmd() {
         *verticeBuffers[i]->second.GetBuffer(),
         1, &verticeCpy[i]);
     
-      verticeBuffers[i]->second.cpyBool = true;
+      verticeBuffers[i]->first.writtenTo = false;
+      verticeBuffers[i]->second.fromStagedBuffer = true;
     }; //if VerticeBuffers
 
-    if (indiceBuffers.size()>i) {
+    if (indiceBuffers.size()>i &&
+      !indiceBuffers[i]->second.fromStagedBuffer &&
+      indiceBuffers[i]->first.writtenTo) {
       indiceCpy[i].size = indiceBuffers[i]->first.GetSize();
 
       vkCmdCopyBuffer(
@@ -209,24 +214,107 @@ void MainLoop::TriggerCpyCmd() {
         *indiceBuffers[i]->second.GetBuffer(),
         1, &indiceCpy[i]);
 
-      indiceBuffers[i]->second.cpyBool = true;
+      indiceBuffers[i]->first.writtenTo = false;
+      indiceBuffers[i]->second.fromStagedBuffer = true;
     }; //if indiceBuffers
-  }; //i < size
 
-  for (i = swapChain->texImages.size(); i < swapChain->texImages.size();--i) {
-    vkCmdCopyBufferToImage(
-      cpyCmdBuffers[recurseIndex.value()],
-      *textureStages[i].GetBuffer(),
-      swapChain->texImages[i],
-      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-      1, &swapChain->texCpy[i]
-    ); //vkCMdCopyBuffer
-  }; //swapChain texImages
+    if (imageBuffers.size()>i &&
+      !imageBuffers[i]->second.fromStagedBuffer &&
+      imageBuffers[i]->first.writtenTo) {
+
+      imageCpy[i].bufferOffset = 0;
+      imageCpy[i].bufferRowLength = 0;
+      imageCpy[i].bufferImageHeight = 0;
+      imageCpy[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      imageCpy[i].imageSubresource.mipLevel = 0;
+      imageCpy[i].imageSubresource.baseArrayLayer = 0;
+      imageCpy[i].imageSubresource.layerCount = 1;
+      imageCpy[i].imageOffset = { 0, 0, 0 };
+      imageCpy[i].imageExtent = { 
+        imageBuffers[i]->second.width,
+        imageBuffers[i]->second.height, 1 };
+
+      vkCmdCopyBufferToImage(
+        cpyCmdBuffers[recurseIndex.value()],
+        *imageBuffers[i]->first.GetBuffer(),
+        imageBuffers[i]->second.image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &imageCpy[i]
+      ); //vkCMdCopyBuffer
+
+      imageBuffers[i]->first.writtenTo = false;
+      imageBuffers[i]->second.fromStagedBuffer = true;
+    } //if Stage Ready
+  }; //i < size
 
   vkEndCommandBuffer(cpyCmdBuffers[recurseIndex.value()]);
   recurseIndex.value() -= 1;
   TriggerCpyCmd();
 }; //TriggerCpyCmd
+void MainLoop::TriggerTransitionCmd() {
+  
+  for (size_t i = gfxPipelines.size() - 1; i < gfxPipelines.size(); --i) {
+    
+    if (imageBuffers.size() > i &&
+      imageBuffers[i]->second.fromStagedBuffer &&
+      !imageBuffers[i]->first.writtenTo) {
+
+      VkImageSubresourceRange subRange{};
+      VkImageMemoryBarrier barrier{};
+      subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      subRange.baseMipLevel = 0;
+      subRange.levelCount = 1;
+      subRange.baseArrayLayer = 0;
+      subRange.layerCount = 1;
+      
+      barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+      barrier.oldLayout = imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex-1];
+      barrier.newLayout = imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex];
+      barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+      barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+      barrier.image = imageBuffers[i]->second.image;
+      barrier.subresourceRange = subRange;
+
+      if (imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex - 1] == VK_IMAGE_LAYOUT_UNDEFINED && 
+        imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex] == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        vkCmdPipelineBarrier(
+          imageCmdBuffers[0],
+          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+          VK_PIPELINE_STAGE_TRANSFER_BIT,
+          0, 0, nullptr,
+          0, nullptr,
+          1, &barrier
+        ); //vkCmdPipelineBarrier
+      }
+      else if (imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex - 1] && 
+        imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex]) {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+          imageCmdBuffers[0],
+          VK_PIPELINE_STAGE_TRANSFER_BIT,
+          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+          0, 0, nullptr,
+          0, nullptr,
+          1, &barrier
+        ); //vkCmdPipelineBarrier
+      }
+      else {
+        throw std::invalid_argument("Layout Transition Invalid!");
+      }
+
+      imageBuffers[i]->first.writtenTo = false;
+      imageBuffers[i]->second.fromStagedBuffer = false;
+      imageBuffers[i]->second.AdvanceImageLayout();
+      } //if Stage Ready
+
+  }; //gfxPipeline
+
+}; //TriggerTransitionCMd
 void MainLoop::AddGfxPipeline(std::shared_ptr<GFXPipeline>* pipe, uint_fast8_t index) {
   if (gfxPipelines.size() <= index) { gfxPipelines.resize(index+1); gfxPipelines[index] = *pipe; }
   else { gfxPipelines[index] = *pipe; };
@@ -273,3 +361,13 @@ void MainLoop::AddIndiceBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::Mode
     indiceSizes[index] = verticeCount;
   };
 }; //AddVerticeBuffer
+void MainLoop::AddImageBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::ImageBuffer>* buff, uint_fast8_t index) {
+  if (imageBuffers.size() <= index) {
+    imageCpy.resize(index + 1);
+    imageBuffers.resize(index + 1);
+    imageBuffers[index] = buff;
+  }
+  else {
+    imageBuffers[index] = buff;
+  };
+}; //AddImageBuffer

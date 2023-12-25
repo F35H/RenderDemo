@@ -3,7 +3,6 @@
 #include "Vulkan/Objects/Buffers/CommonBuffers.h"
 
 namespace GPUSyncFactory {
-
   struct Semaphore {
     VkSemaphore semaphore;
     Semaphore(VkDevice device);

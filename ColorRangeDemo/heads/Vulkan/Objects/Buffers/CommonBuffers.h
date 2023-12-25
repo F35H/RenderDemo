@@ -28,15 +28,28 @@ namespace CPUBuffer {
     const VkBuffer* GetBuffer();
     uint32_t GetSize();
   }; //Buffer
-  struct TextureBuffer {
-
+  struct ImageBuffer {
+    VkDeviceMemory memory;
+    
+    VkImage image;
+    bool fromStagedBuffer = false;
+    uint8_t transferIndex = 0;
+    uint32_t width;
+    uint32_t height;
+    ImageBuffer(uint32_t height, uint32_t width);
+    void AdvanceImageLayout();
+    std::vector<VkImageLayout> imageLayouts = {
+    VK_IMAGE_LAYOUT_UNDEFINED,
+    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL  };
   }; //TextureBuffer
   struct StageBuffer : GeneralBuffer {
+    bool writtenTo = false;
     StageBuffer(size_t buffSize, void* srcPtr);
   }; //Stage Buffer
   struct ModelBuffer : GeneralBuffer {
-    bool cpyBool = false;
-    ModelBuffer(size_t buffSize, INT buffFlags);
+    bool fromStagedBuffer = false;
+    ModelBuffer(size_t buffSize, uint32_t buffFlags);
   }; //Model Buffer
   struct DescPool {
     VkDescriptorPoolCreateInfo descPoolInfo = {};
@@ -70,11 +83,13 @@ namespace CPUBuffer {
     std::vector<UniformBuffer> uniformBuffers;
     std::vector<std::pair<StageBuffer, ModelBuffer>> vertexBuffers;
     std::vector<std::pair<StageBuffer, ModelBuffer>> indexBuffers;
+    std::vector<std::pair<StageBuffer, ImageBuffer>> imageBuffers;
 
     BufferFactory(std::shared_ptr<ExternalProgram>* eProgram);
     void AddFrameBuffer(std::vector<VkImageView> attachments, VkRenderPass renderPass, UINT scWidth, UINT scHeight);
     void AddUniformBuffers(UINT uniBuffNum, VkDescriptorSetLayout descSetLayout);
     void AddCmdBuffers(UINT cmdBuffNum);
+    std::pair<StageBuffer, ImageBuffer> AddImageBuffer(Texture* texture);
     std::pair<StageBuffer, ModelBuffer> AddVerticeBuffer(Polytope* model);
     std::pair<StageBuffer, ModelBuffer> AddIndiceBuffer(Polytope* model);
     VkCommandBuffer GetCommandBuffer(uint16_t indice);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/Objects/ModelTypes/Primitives.h>
+#include <vulkan/Objects/ModelTypes/ModelPrimitives.h>
 
 //Indices 
 //Triangle

@@ -2,6 +2,7 @@
 
 #include <Vulkan/GeneralIncludes.h>
 #include <ConsoleUI/UISingletons.h>
+#include <stb_image.h>
 
 class FaceFactory {
   //FillT this with classes that build primitives like dodecahedrons, quadrehons, and 
@@ -93,3 +94,16 @@ public:
     edges.push_back(*polyhedra);
   }; //CreateEdge
 };
+
+struct Texture {
+  int height;
+  int width;
+  stbi_uc* data;
+  int texChannel;
+  VkDeviceSize imageSize;
+
+  Texture(std::string filename) {
+    data = stbi_load("textures/texture.jpg", &width, &height, &texChannel, STBI_rgb_alpha);
+    imageSize = width * height * 4;
+  }; //Texture
+}; //Texture

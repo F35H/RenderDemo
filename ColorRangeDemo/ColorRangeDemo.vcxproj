@@ -170,6 +170,7 @@
     <Library Include="libs\vulkan-1.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\Users\micha\Downloads\stb-master(1)\stb-master\stb_image.h" />
     <ClInclude Include="heads\ConsoleUI\Commands\UICommands.h" />
     <ClInclude Include="heads\ConsoleUI\Commands\UIConfigure.h" />
     <ClInclude Include="heads\ConsoleUI\Commands\UIMainMenu.h" />
@@ -177,7 +178,7 @@
     <ClInclude Include="heads\Vulkan\GeneralIncludes.h" />
     <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData\PushConsts.h" />
     <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData\UBOs.h" />
-    <ClInclude Include="heads\Vulkan\Objects\ModelTypes\Primitives.h" />
+    <ClInclude Include="heads\Vulkan\Objects\ModelTypes\ModelPrimitives.h" />
     <ClInclude Include="heads\Vulkan\Objects\Render\RenderIn.h" />
     <ClInclude Include="heads\Vulkan\Objects\Buffers\CommonBuffers.h" />
     <ClInclude Include="heads\Vulkan\Objects\ModelTypes\ModelFactory.h" />

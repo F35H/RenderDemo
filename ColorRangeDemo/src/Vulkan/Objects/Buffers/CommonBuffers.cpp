@@ -57,6 +57,12 @@ std::pair<StageBuffer, ModelBuffer> BufferFactory::AddIndiceBuffer(Polytope* mod
     ModelBuffer(model->GetIndiceSize() * sizeof(uint32_t),VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) });
   return indexBuffers[indexBuffers.size() - 1];
 }; //AddVertexBuffer
+std::pair<StageBuffer, ImageBuffer> BufferFactory::AddImageBuffer(Texture* image) {
+  imageBuffers.push_back({
+    StageBuffer(image->imageSize,image->data),
+    ImageBuffer(image->height,image->width)});
+  return imageBuffers[imageBuffers.size() - 1];
+}; //AddVertexBuffer
 VkCommandBuffer BufferFactory::GetCommandBuffer(uint16_t indice) {
   return cmdPool.value().get()->cmdBuffers[indice];
 }; //GetCommandBuffer
@@ -165,7 +171,7 @@ DescPool::DescPool(UINT uniBuffNum, VkDescriptorSetLayout descSetLayout) {
 }; //DescriptorPool
 
 //ModelBuffer
-ModelBuffer::ModelBuffer(size_t buffSize, INT buffFlags) {
+ModelBuffer::ModelBuffer(size_t buffSize, uint32_t buffFlags) {
   buffInfo.size = buffSize;
   buffInfo.usage = buffFlags;
   buffInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -198,6 +204,7 @@ StageBuffer::StageBuffer(size_t buffSize, void* srcPtr) {
   vkMapMemory(externalProgram->device, bufferMemory, 0, buffSize, 0, &mappedBuffer);
   memcpy(mappedBuffer, srcPtr, buffInfo.size);
   vkUnmapMemory(externalProgram->device, bufferMemory);
+  writtenTo = true;
 }; //StageBuffer
 
 //GeneralBuffer
@@ -218,3 +225,52 @@ void GeneralBuffer::CreateBuffer() {
 void GeneralBuffer::ConfirmMemoryType() {
   Utility::ConfirmMemory(&memRequirements, &allocProperties, &allocInfo);
 }; //ConfirmMemoryType
+
+//ImageBuffer 
+ImageBuffer::ImageBuffer(uint32_t h, uint32_t w) {
+  VkImageCreateInfo texInfo;
+  VkBufferImageCopy imageCpy;
+
+  height = h;
+  width = w;
+
+  texInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  texInfo.imageType = VK_IMAGE_TYPE_2D;
+  texInfo.extent.width = width;
+  texInfo.extent.height = height;
+  texInfo.extent.depth = 1;
+  texInfo.mipLevels = 1;
+  texInfo.arrayLayers = 1;
+  texInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+  texInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+  texInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  texInfo.usage =
+    VK_IMAGE_USAGE_SAMPLED_BIT |
+    VK_IMAGE_USAGE_STORAGE_BIT |
+    VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  texInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  texInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+  texInfo.flags = 0;
+
+  VkResult result = vkCreateImage(externalProgram->device, &texInfo, nullptr, &image);
+  errorHandler->ConfirmSuccess(result, "Creating Texture Image");
+
+  VkMemoryRequirements memRequirements;
+  vkGetImageMemoryRequirements(externalProgram->device, image, &memRequirements);
+
+  VkMemoryAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  allocInfo.allocationSize = memRequirements.size;
+  auto propFlag = static_cast<VkMemoryPropertyFlags>(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+  Utility::ConfirmMemory(&memRequirements, &propFlag, &allocInfo);
+  VkDeviceMemory memory;
+
+  result = vkAllocateMemory(externalProgram->device, &allocInfo, nullptr, &memory);
+  errorHandler->ConfirmSuccess(result, "Allocating Image Memory");
+
+  vkBindImageMemory(externalProgram->device, image, memory, 0);
+}; //ImageBuffer
+void ImageBuffer::AdvanceImageLayout() {
+  ++transferIndex;
+  if (transferIndex > imageLayouts.size() - 1) transferIndex = 0;
+}; // AdvanceImageLayout

@@ -315,50 +315,6 @@ void SwapChain::Activate(mode swapmode) {
   }; //switch
 }; //Activate
 
-void SwapChain::AddTexture(uint32_t height, uint32_t width, uint_fast8_t index) {
-  VkImage texImage;
-  VkImageCreateInfo texInfo;
-  VkBufferImageCopy imageCpy;
-  if (texImages.size() <= index) { 
-    texImages.resize(index + 1); 
-    texImages[index] = texImage; 
-    texCpy.resize(index + 1);
-    texCpy[index] = imageCpy;
-  }  //texImages
-  else { texImages[index] = texImage; };
-  
-  texInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-  texInfo.imageType = VK_IMAGE_TYPE_2D;
-  texInfo.extent.width = static_cast<uint32_t>(width);
-  texInfo.extent.height = static_cast<uint32_t>(height);
-  texInfo.extent.depth = 1;
-  texInfo.mipLevels = 1;
-  texInfo.arrayLayers = 1;
-  texInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-  texInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-  texInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  texInfo.usage = 
-    VK_IMAGE_USAGE_SAMPLED_BIT | 
-    VK_IMAGE_USAGE_STORAGE_BIT |
-    VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-  texInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  texInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-  texInfo.flags = 0;
-
-  texCpy[index].bufferOffset = 0;
-  texCpy[index].bufferRowLength = 0;
-  texCpy[index].bufferImageHeight = 0;
-  texCpy[index].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-  texCpy[index].imageSubresource.mipLevel = 0;
-  texCpy[index].imageSubresource.baseArrayLayer = 0;
-  texCpy[index].imageSubresource.layerCount = 1;
-  texCpy[index].imageOffset = { 0, 0, 0 };
-  texCpy[index].imageExtent = { width, height, 1};
-
-  result = vkCreateImage(externalProgram->device, &texInfo, nullptr, &texImage);
-  errorHandler->ConfirmSuccess(result, "Creating Texture Image");
-}; //AddTexture
-
 SwapChain::~SwapChain() {
   Activate(Cleanup);
 }; //SwapChain

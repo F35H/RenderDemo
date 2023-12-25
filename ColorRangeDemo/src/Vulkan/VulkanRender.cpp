@@ -73,9 +73,9 @@ Vulkan::VulkanRender::VulkanRender() {
     bufferFact->AddIndiceBuffer(&model);
   }; //Creating Buffers
 
-  for (auto image : swapChain->texImages) {
-    bufferFact->AddTextureBuffer(&image);
-  }; //texImages
+  //for (auto image : swapChain->texImages) {
+  //  bufferFact->AddTextureBuffer(&image);
+  //}; //texImages
 
   std::vector<VkClearValue> clearColor = {
     {{0.0f, 0.0f, 0.0f, 1.0f}},

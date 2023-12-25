@@ -90,15 +90,10 @@ namespace RenderIn {
     //FrameBuffer
     std::vector<CPUBuffer::FrameBuffer> frameBuffers;
 
-    std::vector<VkImage> texImages;
-    //std::vector<VkImageCreateInfo> texInfos;
-    std::vector<VkBufferImageCopy> texCpy;
-
     std::shared_ptr<ExternalProgram> externalProgram;
     VkResult result;
 
     void Activate(mode swapmode);
-    void AddTexture(uint32_t height, uint32_t width, int_fast8_t index);
 
     SwapChain(std::shared_ptr<ExternalProgram>* eProgram);
     ~SwapChain();
@@ -117,20 +112,21 @@ namespace RenderIn {
 
     std::vector<VkCommandBuffer> cpyCmdBuffers;
     std::vector<VkCommandBuffer> presentCmdBuffers;
+    std::vector<VkCommandBuffer> imageCmdBuffers;
     std::vector<VkCommandBuffer> totalCmdBuffers;
 
     std::vector<VkBufferCopy> verticeCpy;
     std::vector<VkBufferCopy> indiceCpy;
+    std::vector<VkBufferImageCopy> imageCpy;
 
     std::vector<std::pair<CPUBuffer::StageBuffer, CPUBuffer::ModelBuffer>*> verticeBuffers;
     std::vector<std::pair<CPUBuffer::StageBuffer, CPUBuffer::ModelBuffer>*> indiceBuffers;
+    std::vector<std::pair<CPUBuffer::StageBuffer, CPUBuffer::ImageBuffer>*> imageBuffers;
     std::vector<size_t> indiceSizes;
     std::vector<size_t> verticeSizes;
 
     std::vector<std::optional<VkDescriptorSet>> descSets;
     std::vector<std::optional<PushConst*>> pushConsts;
-
-    std::vector<CPUBuffer::StageBuffer> textureStages;
 
     std::vector<VkClearValue> clearColor;
 
@@ -166,10 +162,11 @@ namespace RenderIn {
     void AddDescSet(VkDescriptorSet set, uint_fast8_t index);
     void AddVerticeBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::ModelBuffer>* buff, size_t verticeCount, uint_fast8_t index);
     void AddIndiceBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::ModelBuffer>* buff, size_t verticeCount, uint_fast8_t index);
-
+    void AddImageBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::ImageBuffer>* buff, uint_fast8_t index);
   private:
     void TriggerRenderInput();
     void TriggerCpyCmd();
+    void TriggerTransitionCmd();
   }; //MainLoop
 }; //Render Out
 
