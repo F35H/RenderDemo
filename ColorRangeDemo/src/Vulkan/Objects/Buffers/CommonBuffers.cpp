@@ -24,12 +24,18 @@ BufferFactory::BufferFactory(std::shared_ptr<ExternalProgram>* eProgram) {
 void BufferFactory::AddFrameBuffer(std::vector<VkImageView> attachments, VkRenderPass renderPass, UINT scWidth, UINT scHeight) {
   frameBuffers.emplace_back(FrameBuffer(attachments, renderPass, scWidth, scHeight));
 }; //AddFrameBuffer
-void BufferFactory::AddUniformBuffers(UINT uniBuffNum, VkDescriptorSetLayout descSetLayout) {
-  if (uniBuffNum == 0) return;
-  if (!descPool) descPool = std::make_unique<DescPool>(DescPool(uniBuffNum, descSetLayout));
-  uniformBuffers.emplace_back(
-    UniformBuffer(descPool.value().get()->descSets[uniBuffNum - 1]));
-  AddUniformBuffers(uniBuffNum - 1, descSetLayout);
+void BufferFactory::AddUniformBuffer(size_t uniBuffSize) {
+  if (!descPool) descPool = std::make_unique<DescPool>(DescPool());
+  auto ptr = new UniformBuffer(uniBuffSize);
+  descPool.value().get()->uniBuffs.emplace_back(*ptr);
+  uniformBuffers.push_back(ptr);
+}; //AddUniformBuffer
+void BufferFactory::AddImageBuffer(Texture* t) {
+  if (!descPool) descPool = std::make_unique<DescPool>(DescPool());
+  descPool.value().get()->imageBuffs.push_back(ImageBuffer(t->height,t->width));
+  imageBuffers.push_back({
+    new StageBuffer(t->imageSize,t->data),
+    &descPool.value().get()->imageBuffs[descPool.value().get()->imageBuffs.size()-1]});
 }; //AddUniformBuffer
 void BufferFactory::AddCmdBuffers(UINT cmdBuffNum) {
   if (!cmdPool) cmdPool = std::make_unique<CmdPool>(CmdPool());
@@ -44,30 +50,24 @@ void BufferFactory::AddCmdBuffers(UINT cmdBuffNum) {
   auto result = vkAllocateCommandBuffers(externalProgram->device, &allocInfo, cmdPool.value().get()->cmdBuffers.data());
   errorHandler->ConfirmSuccess(result, "Allocating Command Buffers");
 }; //AddCmdBUffers
-std::pair<StageBuffer, ModelBuffer> BufferFactory::AddVerticeBuffer(Polytope* model) {
+std::pair<StageBuffer*, ModelBuffer*> BufferFactory::AddVerticeBuffer(Polytope* model) {
   StageBuffer(model->GetBufferSize(), model->vertices.data());
   vertexBuffers.push_back({
-    StageBuffer(model->GetBufferSize(), model->vertices.data()),
-    ModelBuffer(model->GetBufferSize(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) });
+    new StageBuffer(model->GetBufferSize(), model->vertices.data()),
+    new ModelBuffer(model->GetBufferSize(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) });
   return vertexBuffers[vertexBuffers.size() - 1];
 }; //AddVertexBuffer
-std::pair<StageBuffer, ModelBuffer> BufferFactory::AddIndiceBuffer(Polytope* model) {
+std::pair<StageBuffer*, ModelBuffer*> BufferFactory::AddIndiceBuffer(Polytope* model) {
   indexBuffers.push_back({
-    StageBuffer(model->GetIndiceSize() * sizeof(uint32_t), model->indices.data()),
-    ModelBuffer(model->GetIndiceSize() * sizeof(uint32_t),VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) });
+    new StageBuffer(model->GetIndiceSize() * sizeof(uint32_t), model->indices.data()),
+    new ModelBuffer(model->GetIndiceSize() * sizeof(uint32_t),VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) });
   return indexBuffers[indexBuffers.size() - 1];
 }; //AddVertexBuffer
-std::pair<StageBuffer, ImageBuffer> BufferFactory::AddImageBuffer(Texture* image) {
-  imageBuffers.push_back({
-    StageBuffer(image->imageSize,image->data),
-    ImageBuffer(image->height,image->width)});
-  return imageBuffers[imageBuffers.size() - 1];
-}; //AddVertexBuffer
-VkCommandBuffer BufferFactory::GetCommandBuffer(uint16_t indice) {
+VkCommandBuffer BufferFactory::GetCommandBuffer(uint_fast8_t indice) {
   return cmdPool.value().get()->cmdBuffers[indice];
 }; //GetCommandBuffer
-VkDescriptorSet BufferFactory::GetDescriptorSet(uint16_t indice) {
-  return descPool.value().get()->descSets[indice];
+VkDescriptorSet* BufferFactory::GetDescriptorSet(uint_fast8_t indice) {
+  return &descPool.value().get()->descSets[indice];
 }; //GetCommandBuffer
 
 
@@ -87,8 +87,8 @@ FrameBuffer::FrameBuffer(std::vector<VkImageView> attachments, VkRenderPass rend
 }; //FrameBuffer
 
 //UniformBuffer
-UniformBuffer::UniformBuffer(VkDescriptorSet descSet) {
-  buffInfo.size = sizeof(UniformBufferObject);
+UniformBuffer::UniformBuffer(size_t bufferSize) {
+  buffInfo.size = bufferSize;
   buffInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
   CreateBuffer();
@@ -107,26 +107,6 @@ UniformBuffer::UniformBuffer(VkDescriptorSet descSet) {
 
   vkBindBufferMemory(externalProgram->device, buffer, bufferMemory, 0);
   vkMapMemory(externalProgram->device, bufferMemory, 0, buffInfo.size, 0, &mappedBuffer);
-
-
-  //Create DescriptorBuffer
-  VkDescriptorBufferInfo descBuffInfo{};
-  descBuffInfo.buffer = buffer;
-  descBuffInfo.offset = 0;
-  descBuffInfo.range = sizeof(UniformBufferObject);
-
-  VkWriteDescriptorSet descriptorWrite{};
-  descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-  descriptorWrite.dstSet = descSet;
-  descriptorWrite.dstBinding = 0;
-  descriptorWrite.dstArrayElement = 0;
-  descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  descriptorWrite.descriptorCount = 1;
-  descriptorWrite.pBufferInfo = &descBuffInfo;
-  descriptorWrite.pImageInfo = nullptr;
-  descriptorWrite.pTexelBufferView = nullptr;
-
-  vkUpdateDescriptorSets(externalProgram->device, 1, &descriptorWrite, 0, nullptr);
 }; //UniformBuffer
 void UniformBuffer::CopyData(void* srcPtr) {
   memcpy(mappedBuffer, srcPtr, buffInfo.size);
@@ -144,31 +124,70 @@ CmdPool::CmdPool() {
 }; //CmdPool
 
 //DescPool
-DescPool::DescPool(UINT uniBuffNum, VkDescriptorSetLayout descSetLayout) {
-  descSets.resize(uniBuffNum);
-
-  //DescPoolSize
-  descPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  descPoolSize.descriptorCount = uniBuffNum;
+void DescPool::Activate(uint32_t descNum, VkDescriptorSetLayout descSetLayout) {
+  descSets.resize(descNum);
+  
+  //DescriptorPools
+  std::vector<VkDescriptorPoolSize> poolSizes;
+  poolSizes.resize(2);
+  poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  poolSizes[0].descriptorCount = descNum;
+  poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  poolSizes[1].descriptorCount = descNum;
 
   descPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-  descPoolInfo.poolSizeCount = 1;
-  descPoolInfo.pPoolSizes = &descPoolSize;
-  descPoolInfo.maxSets = uniBuffNum;
+  descPoolInfo.poolSizeCount = poolSizes.size();
+  descPoolInfo.pPoolSizes = poolSizes.data();
+  descPoolInfo.maxSets = descNum;
 
   auto result = vkCreateDescriptorPool(externalProgram->device, &descPoolInfo, nullptr, &descPool);
   errorHandler->ConfirmSuccess(result, "Creating Descriptor Pool");
 
-  std::vector<VkDescriptorSetLayout> layouts(uniBuffNum, descSetLayout);
-
+  //DescriptorSets
+  std::vector<VkDescriptorSetLayout> layouts(descNum, descSetLayout);
+  
   VkDescriptorSetAllocateInfo allocInfo = {};
   allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
   allocInfo.descriptorPool = descPool;
-  allocInfo.descriptorSetCount = uniBuffNum;
+  allocInfo.descriptorSetCount = descNum;
   allocInfo.pSetLayouts = layouts.data();
   result = vkAllocateDescriptorSets(externalProgram->device, &allocInfo, descSets.data());
   errorHandler->ConfirmSuccess(result, "Allocating DescriptorSets");
-}; //DescriptorPool
+
+  //DescriptorWrite
+
+  for (uint_fast8_t i = descNum-1; i < descNum; --i) {
+    std::vector<VkWriteDescriptorSet> descWrites(2);
+    std::pair<VkDescriptorBufferInfo, VkDescriptorImageInfo> descInfo;
+    
+    descInfo.first.buffer = *uniBuffs[i].GetBuffer();
+    descInfo.first.offset = 0;
+    descInfo.first.range = uniBuffs[i].GetSize();
+
+    descInfo.second.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    descInfo.second.imageView = imageBuffs[i].imageView;
+    descInfo.second.sampler = imageBuffs[i].imageSampler;
+    
+    descWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descWrites[0].dstSet = descSets[i];
+    descWrites[0].dstBinding = 0;
+    descWrites[0].dstArrayElement = 0;
+    descWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descWrites[0].descriptorCount = 1;
+    descWrites[0].pBufferInfo = &descInfo.first;
+
+    descWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descWrites[1].dstSet = descSets[i];
+    descWrites[1].dstBinding = 1;
+    descWrites[1].dstArrayElement = 0;
+    descWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descWrites[1].descriptorCount = 1;
+    descWrites[1].pImageInfo = &descInfo.second;
+
+    vkUpdateDescriptorSets(externalProgram->device, static_cast<uint32_t>(descWrites.size()), descWrites.data(), 0, nullptr);
+  }; //everyDescNum
+
+}; //Activate
 
 //ModelBuffer
 ModelBuffer::ModelBuffer(size_t buffSize, uint32_t buffFlags) {
@@ -234,6 +253,7 @@ ImageBuffer::ImageBuffer(uint32_t h, uint32_t w) {
   height = h;
   width = w;
 
+  texInfo = {};
   texInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
   texInfo.imageType = VK_IMAGE_TYPE_2D;
   texInfo.extent.width = width;
@@ -246,7 +266,6 @@ ImageBuffer::ImageBuffer(uint32_t h, uint32_t w) {
   texInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
   texInfo.usage =
     VK_IMAGE_USAGE_SAMPLED_BIT |
-    VK_IMAGE_USAGE_STORAGE_BIT |
     VK_IMAGE_USAGE_TRANSFER_DST_BIT;
   texInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
   texInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -269,8 +288,43 @@ ImageBuffer::ImageBuffer(uint32_t h, uint32_t w) {
   errorHandler->ConfirmSuccess(result, "Allocating Image Memory");
 
   vkBindImageMemory(externalProgram->device, image, memory, 0);
+
+
+  VkImageViewCreateInfo viewInfo{};
+  viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  viewInfo.image = image;
+  viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+  viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  viewInfo.subresourceRange.baseMipLevel = 0;
+  viewInfo.subresourceRange.levelCount = 1;
+  viewInfo.subresourceRange.baseArrayLayer = 0;
+  viewInfo.subresourceRange.layerCount = 1;
+
+  vkCreateImageView(externalProgram->device, &viewInfo, nullptr, &imageView);
+
+
+  VkPhysicalDeviceProperties properties{};
+  vkGetPhysicalDeviceProperties(externalProgram->physicalDevice, &properties);
+  
+  VkSamplerCreateInfo samplerInfo{};
+  samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  samplerInfo.magFilter = VK_FILTER_LINEAR;
+  samplerInfo.minFilter = VK_FILTER_LINEAR;
+  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.anisotropyEnable = VK_TRUE;
+  samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+  samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+  samplerInfo.unnormalizedCoordinates = VK_FALSE;
+  samplerInfo.compareEnable = VK_FALSE;
+  samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+  samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+  result = vkCreateSampler(externalProgram->device, &samplerInfo, nullptr, &imageSampler);
+  errorHandler->ConfirmSuccess(result, "Create Texture Sampler");
+
+  oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 }; //ImageBuffer
-void ImageBuffer::AdvanceImageLayout() {
-  ++transferIndex;
-  if (transferIndex > imageLayouts.size() - 1) transferIndex = 0;
-}; // AdvanceImageLayout

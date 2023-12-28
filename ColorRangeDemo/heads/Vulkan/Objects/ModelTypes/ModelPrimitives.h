@@ -1,8 +1,8 @@
 #pragma once
 
+#define STB_IMAGE_IMPLEMENTATION
 #include <Vulkan/GeneralIncludes.h>
 #include <ConsoleUI/UISingletons.h>
-#include <stb_image.h>
 
 class FaceFactory {
   //FillT this with classes that build primitives like dodecahedrons, quadrehons, and 
@@ -12,6 +12,7 @@ struct Vertex {
   glm::vec3 pos;
   glm::vec3 color;
   glm::vec3 norm;
+  glm::vec2 texPos;
 }; //Vertex
 
 class Polytope {
@@ -103,7 +104,8 @@ struct Texture {
   VkDeviceSize imageSize;
 
   Texture(std::string filename) {
-    data = stbi_load("textures/texture.jpg", &width, &height, &texChannel, STBI_rgb_alpha);
+    data = stbi_load(filename.c_str(), &width, &height, &texChannel, STBI_rgb_alpha);
+    if (data == NULL) throw std::runtime_error("Loading Texture File Failed");
     imageSize = width * height * 4;
   }; //Texture
 }; //Texture

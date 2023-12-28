@@ -1,4 +1,5 @@
 ﻿#include <ConsoleUI/Facade.h>
+#define STB_IMAGE_IMPLEMENTATION
 
 int main() {
   //ConsoleUI* ui;

@@ -19,10 +19,10 @@ out gl_PerVertex
 void main() 
 {
   //Extrude along Position 
-	gl_Position = ubo.projection * ubo.model * ubo.view * vec4(inPos.xyz + inPos.xyz * 0.1, 1.0f);
+	//gl_Position = ubo.projection * ubo.model * ubo.view * vec4(inPos.xyz + inPos.xyz * 0.1, 1.0f);
 	
   //Extrude along position normal
-  //gl_Position = ubo.projection * ubo.model * ubo.view * vec4(inPos.xyz + normalize(inPos.xyz) * 0.1, 1.0f);
+  gl_Position = ubo.projection * ubo.model * ubo.view * vec4(inPos.xyz + normalize(inPos.xyz) * 0.1, 1.0f);
 
   // Vertical box blur.
 

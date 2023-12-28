@@ -76,13 +76,8 @@ void GFXPipeline::Activate(VkRenderPass renderPass) {
 
 
   //DescriptorSets
-  uboLayoutBinding.binding = 0;
-  uboLayoutBinding.descriptorCount = 1;
-  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-  uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-  descLayoutInfo.bindingCount = 1;
-  descLayoutInfo.pBindings = &uboLayoutBinding;
+  descLayoutInfo.bindingCount = descSetLayoutBinding.size();
+  descLayoutInfo.pBindings = descSetLayoutBinding.data();
   descLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 
   result = vkCreateDescriptorSetLayout(externalProgram->device, &descLayoutInfo, nullptr, &descriptorSetLayout);
@@ -224,6 +219,26 @@ void GFXPipeline::AddShaderBinding(ShaderType shaderType, uint32_t offsetorstrid
   }; //ShaderType Switch
 }
 
+void GFXPipeline::AddUniformBuffer(ShaderType shader) {
+  VkDescriptorSetLayoutBinding uboLayoutBinding{};
+  uboLayoutBinding.binding = descSetLayoutBinding.size();
+  uboLayoutBinding.descriptorCount = 1;
+  if (shader == Fragment) uboLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  if (shader == Vertex) uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  descSetLayoutBinding.push_back(uboLayoutBinding);
+}; //AddUniformBuffer
+
+void GFXPipeline::AddImageSampler(ShaderType shader) {
+  VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+  samplerLayoutBinding.binding = descSetLayoutBinding.size();
+  samplerLayoutBinding.descriptorCount = 1;
+  samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  samplerLayoutBinding.pImmutableSamplers = nullptr;
+  if (shader == Fragment) samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  if (shader == Vertex) samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  descSetLayoutBinding.push_back(samplerLayoutBinding);
+}; //AddImageSampler
 
 void GFXPipeline::AddPushConst(ShaderType pushConstLocation) {
   VkPushConstantRange pushConst;

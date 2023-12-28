@@ -138,17 +138,58 @@ struct UniformFactory {
 
 
 struct newUniformFactory {
+  std::shared_ptr<ExternalProgram> externalProgram;
+  VkResult result;
+
+  std::vector<PushConst> pushConsts;
+  std::vector<UniformBufferObject> uniBuffers;
+  std::vector<VkSampler> samplers;
+  
+  float aspectRatio;
   newUniformFactory() = default;
 
-  void Activate() {
-
+  void Activate(float aspect) {
+    aspectRatio = aspect;
   }; //Activate
 
   void CreatePushConst() {
-
+    pushConsts.resize(pushConsts.size() + 1);
+    pushConsts[pushConsts.size() - 1] = PushConst();
   }; //CreatePushConst
 
   void CreateUBO() {
-
+    uniBuffers.resize(uniBuffers.size() + 1);
+    uniBuffers[uniBuffers.size() - 1].model = glm::mat4(1.0f);
+    uniBuffers[uniBuffers.size() - 1].view = glm::lookAt(
+      glm::vec3(0.0f, 0.0f, 3.0f), 
+      glm::vec3(0.0f, 0.0f, 0.0f), 
+      glm::vec3(0.0f, 1.0f, 0.0f));
+    uniBuffers[uniBuffers.size() - 1].proj = glm::perspective(
+      glm::radians(45.0f), 
+      aspectRatio, 0.1f, 10.0f);
   }; //CreaeUBO
+
+  void CreateSampler() {
+    samplers.resize(samplers.size() + 1);
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(externalProgram->physicalDevice, &properties);
+
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+    result = vkCreateSampler(externalProgram->device, &samplerInfo, nullptr, &samplers[samplers.size() - 1]);
+    errorHandler->ConfirmSuccess(result, "Creating Texture Sampler");
+  }; //CreateSampler
 }; //newUniformFactory

@@ -42,12 +42,14 @@ void MainLoop::ActivateSyncedInput() {
 void MainLoop::ActivateCmdInput() {
   TriggerRenderInput();
   TriggerCpyCmd();
+  TriggerTransitionCmd();
 }; //ActivateCommandInput
 void MainLoop::ActivateSyncedOutput() {
   totalCmdBuffers.clear();
   totalCmdBuffers.reserve(cpyCmdBuffers.size() + presentCmdBuffers.size());
   totalCmdBuffers.insert(totalCmdBuffers.begin(), cpyCmdBuffers.begin(), cpyCmdBuffers.end());
   totalCmdBuffers.insert(totalCmdBuffers.begin(), presentCmdBuffers.begin(), presentCmdBuffers.end());
+  totalCmdBuffers.insert(totalCmdBuffers.begin(), imageCmdBuffers.begin(), imageCmdBuffers.end());
 
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -115,20 +117,20 @@ void MainLoop::TriggerRenderInput() {
       gfxPipelines[i]->graphicsPipeline);
 
     if (verticeBuffers.size() > i) {
-      if (verticeBuffers[i]->second.fromStagedBuffer) {
+      if (verticeBuffers[i]->second->fromStagedBuffer) {
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(
           presentCmdBuffers[recurseIndex.value()], 0, 1,
-          verticeBuffers[i]->second.GetBuffer(), offsets);
+          verticeBuffers[i]->second->GetBuffer(), offsets);
       } //if verticeBuffers
       else break;
     }; //has_value
 
     if (indiceBuffers.size() > i) {
-      if (indiceBuffers[i]->second.fromStagedBuffer) {
+      if (indiceBuffers[i]->second->fromStagedBuffer) {
         vkCmdBindIndexBuffer(
           presentCmdBuffers[recurseIndex.value()],
-          *indiceBuffers[i]->second.GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+          *indiceBuffers[i]->second->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
       } //index Buffers
       else break;
     }; //has_value
@@ -150,16 +152,16 @@ void MainLoop::TriggerRenderInput() {
           presentCmdBuffers[recurseIndex.value()],
           VK_PIPELINE_BIND_POINT_GRAPHICS,
           gfxPipelines[i]->pipelineLayout, 0, 1,
-          &descSets[i].value(), 0, nullptr);
+          descSets[i].value(), 0, nullptr);
       }; //descSets
     }; //pushConsts
 
-    if (indiceBuffers.size()> i && indiceBuffers[i]->second.fromStagedBuffer) {
+    if (indiceBuffers.size()> i && indiceBuffers[i]->second->fromStagedBuffer) {
       vkCmdDrawIndexed(
         presentCmdBuffers[recurseIndex.value()],
         indiceSizes[i], 1, 0, 0, 0);
     } //if inficeBuffers
-    else if (verticeBuffers.size()> i && verticeBuffers[i]->second.fromStagedBuffer) {
+    else if (verticeBuffers.size()> i && verticeBuffers[i]->second->fromStagedBuffer) {
       vkCmdDraw(presentCmdBuffers[recurseIndex.value()],
         verticeSizes[i], 1, 0, 0);
     } //else if vertices
@@ -189,38 +191,38 @@ void MainLoop::TriggerCpyCmd() {
   size_t i;
   for (i = gfxPipelines.size() - 1; i < gfxPipelines.size(); --i) {
     if (verticeBuffers.size()>i &&
-      !verticeBuffers[i]->second.fromStagedBuffer &&
-      verticeBuffers[i]->first.writtenTo) {
-      verticeCpy[i].size = verticeBuffers[i]->first.GetSize();
+      !verticeBuffers[i]->second->fromStagedBuffer &&
+      verticeBuffers[i]->first->writtenTo) {
+      verticeCpy[i].size = verticeBuffers[i]->first->GetSize();
       
       vkCmdCopyBuffer(
         cpyCmdBuffers[recurseIndex.value()],
-        *verticeBuffers[i]->first.GetBuffer(),
-        *verticeBuffers[i]->second.GetBuffer(),
+        *verticeBuffers[i]->first->GetBuffer(),
+        *verticeBuffers[i]->second->GetBuffer(),
         1, &verticeCpy[i]);
     
-      verticeBuffers[i]->first.writtenTo = false;
-      verticeBuffers[i]->second.fromStagedBuffer = true;
+      verticeBuffers[i]->first->writtenTo = false;
+      verticeBuffers[i]->second->fromStagedBuffer = true;
     }; //if VerticeBuffers
 
     if (indiceBuffers.size()>i &&
-      !indiceBuffers[i]->second.fromStagedBuffer &&
-      indiceBuffers[i]->first.writtenTo) {
-      indiceCpy[i].size = indiceBuffers[i]->first.GetSize();
+      !indiceBuffers[i]->second->fromStagedBuffer &&
+      indiceBuffers[i]->first->writtenTo) {
+      indiceCpy[i].size = indiceBuffers[i]->first->GetSize();
 
       vkCmdCopyBuffer(
         cpyCmdBuffers[recurseIndex.value()],
-        *indiceBuffers[i]->first.GetBuffer(),
-        *indiceBuffers[i]->second.GetBuffer(),
+        *indiceBuffers[i]->first->GetBuffer(),
+        *indiceBuffers[i]->second->GetBuffer(),
         1, &indiceCpy[i]);
 
-      indiceBuffers[i]->first.writtenTo = false;
-      indiceBuffers[i]->second.fromStagedBuffer = true;
+      indiceBuffers[i]->first->writtenTo = false;
+      indiceBuffers[i]->second->fromStagedBuffer = true;
     }; //if indiceBuffers
 
     if (imageBuffers.size()>i &&
-      !imageBuffers[i]->second.fromStagedBuffer &&
-      imageBuffers[i]->first.writtenTo) {
+      !imageBuffers[i]->second->fromStagedBuffer &&
+      imageBuffers[i]->first->writtenTo) {
 
       imageCpy[i].bufferOffset = 0;
       imageCpy[i].bufferRowLength = 0;
@@ -231,19 +233,19 @@ void MainLoop::TriggerCpyCmd() {
       imageCpy[i].imageSubresource.layerCount = 1;
       imageCpy[i].imageOffset = { 0, 0, 0 };
       imageCpy[i].imageExtent = { 
-        imageBuffers[i]->second.width,
-        imageBuffers[i]->second.height, 1 };
+        imageBuffers[i]->second->width,
+        imageBuffers[i]->second->height, 1 };
 
       vkCmdCopyBufferToImage(
         cpyCmdBuffers[recurseIndex.value()],
-        *imageBuffers[i]->first.GetBuffer(),
-        imageBuffers[i]->second.image,
+        *imageBuffers[i]->first->GetBuffer(),
+        imageBuffers[i]->second->image,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, &imageCpy[i]
       ); //vkCMdCopyBuffer
 
-      imageBuffers[i]->first.writtenTo = false;
-      imageBuffers[i]->second.fromStagedBuffer = true;
+      imageBuffers[i]->first->writtenTo = false;
+      imageBuffers[i]->second->fromStagedBuffer = true;
     } //if Stage Ready
   }; //i < size
 
@@ -253,11 +255,17 @@ void MainLoop::TriggerCpyCmd() {
 }; //TriggerCpyCmd
 void MainLoop::TriggerTransitionCmd() {
   
+  vkResetCommandBuffer(imageCmdBuffers[0], 0);
+
+  startCmdBuffer = { };
+  startCmdBuffer.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  vkBeginCommandBuffer(imageCmdBuffers[0], &startCmdBuffer);
+
   for (size_t i = gfxPipelines.size() - 1; i < gfxPipelines.size(); --i) {
-    
+
     if (imageBuffers.size() > i &&
-      imageBuffers[i]->second.fromStagedBuffer &&
-      !imageBuffers[i]->first.writtenTo) {
+      imageBuffers[i]->second->fromStagedBuffer &&
+      !imageBuffers[i]->first->writtenTo) {
 
       VkImageSubresourceRange subRange{};
       VkImageMemoryBarrier barrier{};
@@ -268,15 +276,15 @@ void MainLoop::TriggerTransitionCmd() {
       subRange.layerCount = 1;
       
       barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-      barrier.oldLayout = imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex-1];
-      barrier.newLayout = imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex];
+      barrier.oldLayout = imageBuffers[i]->second->oldLayout;
+      barrier.newLayout = imageBuffers[i]->second->newLayout;
       barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
       barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-      barrier.image = imageBuffers[i]->second.image;
+      barrier.image = imageBuffers[i]->second->image;
       barrier.subresourceRange = subRange;
 
-      if (imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex - 1] == VK_IMAGE_LAYOUT_UNDEFINED && 
-        imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex] == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+      if (imageBuffers[i]->second->oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+        imageBuffers[i]->second->newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
@@ -288,9 +296,12 @@ void MainLoop::TriggerTransitionCmd() {
           0, nullptr,
           1, &barrier
         ); //vkCmdPipelineBarrier
+
+        imageBuffers[i]->second->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        imageBuffers[i]->second->newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
       }
-      else if (imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex - 1] && 
-        imageBuffers[i]->second.imageLayouts[imageBuffers[i]->second.transferIndex]) {
+      else if (imageBuffers[i]->second->oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+        imageBuffers[i]->second->newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
@@ -302,18 +313,21 @@ void MainLoop::TriggerTransitionCmd() {
           0, nullptr,
           1, &barrier
         ); //vkCmdPipelineBarrier
+
+        imageBuffers[i]->second->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        imageBuffers[i]->second->newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
       }
       else {
         throw std::invalid_argument("Layout Transition Invalid!");
       }
 
-      imageBuffers[i]->first.writtenTo = false;
-      imageBuffers[i]->second.fromStagedBuffer = false;
-      imageBuffers[i]->second.AdvanceImageLayout();
+      imageBuffers[i]->first->writtenTo = false;
+      imageBuffers[i]->second->fromStagedBuffer = false;
       } //if Stage Ready
 
   }; //gfxPipeline
 
+  vkEndCommandBuffer(imageCmdBuffers[0]);
 }; //TriggerTransitionCMd
 void MainLoop::AddGfxPipeline(std::shared_ptr<GFXPipeline>* pipe, uint_fast8_t index) {
   if (gfxPipelines.size() <= index) { gfxPipelines.resize(index+1); gfxPipelines[index] = *pipe; }
@@ -323,6 +337,10 @@ void MainLoop::AddCpyCmdBuffer(VkCommandBuffer buff, uint_fast8_t index) {
   if (cpyCmdBuffers.size() <= index) { cpyCmdBuffers.resize(index + 1); cpyCmdBuffers[index] = buff; }
   else { cpyCmdBuffers[index] = buff; };
 }; //AddCpyCmdBuffer;
+void MainLoop::AddImageCmdBuffer(VkCommandBuffer buff, uint_fast8_t index) {
+  if (imageCmdBuffers.size() <= index) { imageCmdBuffers.resize(index + 1); imageCmdBuffers[index] = buff; }
+  else { imageCmdBuffers[index] = buff; };
+}; //AddImageCmdBuffer
 void MainLoop::AddPresentCmdBuffer(VkCommandBuffer buff, uint_fast8_t index) {
   if (presentCmdBuffers.size() <= index) { presentCmdBuffers.resize(index + 1); presentCmdBuffers[index] = buff; }
   else { presentCmdBuffers[index] = buff; };
@@ -331,11 +349,11 @@ void MainLoop::AddPushConst(PushConst* pushConst, uint_fast8_t index) {
   if (pushConsts.size() <= index) { pushConsts.resize(index + 1); pushConsts[index] = pushConst; }
   else { pushConsts[index] = pushConst; };
 }; //AddPushConst
-void MainLoop::AddDescSet(VkDescriptorSet set, uint_fast8_t index) {
+void MainLoop::AddDescSet(VkDescriptorSet* set, uint_fast8_t index) {
   if (descSets.size() <= index) { descSets.resize(index + 1); descSets[index] = set; }
   else { descSets[index] = set; };
 }; //AddDescSet
-void MainLoop::AddVerticeBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::ModelBuffer>* buff, size_t verticeCount, uint_fast8_t index) {
+void MainLoop::AddVerticeBuffer(std::pair<CPUBuffer::StageBuffer*, CPUBuffer::ModelBuffer*>* buff, size_t verticeCount, uint_fast8_t index) {
   if (verticeBuffers.size() <= index) {
     verticeCpy.resize(index + 1);
     verticeBuffers.resize(index + 1);
@@ -348,7 +366,7 @@ void MainLoop::AddVerticeBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::Mod
     verticeSizes[index] = verticeCount;
   };
 }; //AddVerticeBuffer
-void MainLoop::AddIndiceBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::ModelBuffer>* buff, size_t verticeCount, uint_fast8_t index) {
+void MainLoop::AddIndiceBuffer(std::pair<CPUBuffer::StageBuffer*, CPUBuffer::ModelBuffer*>* buff, size_t verticeCount, uint_fast8_t index) {
   if (indiceBuffers.size() <= index) {
     indiceCpy.resize(index + 1);
     indiceBuffers.resize(index + 1);
@@ -361,7 +379,7 @@ void MainLoop::AddIndiceBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::Mode
     indiceSizes[index] = verticeCount;
   };
 }; //AddVerticeBuffer
-void MainLoop::AddImageBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::ImageBuffer>* buff, uint_fast8_t index) {
+void MainLoop::AddImageBuffer(std::pair<CPUBuffer::StageBuffer*, CPUBuffer::ImageBuffer*>* buff, uint_fast8_t index) {
   if (imageBuffers.size() <= index) {
     imageCpy.resize(index + 1);
     imageBuffers.resize(index + 1);

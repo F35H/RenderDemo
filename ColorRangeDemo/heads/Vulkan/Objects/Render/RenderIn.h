@@ -18,7 +18,7 @@ namespace RenderIn {
     std::vector<VkShaderModuleCreateInfo> shaderModulesInfo;
 
     VkDescriptorSetLayoutCreateInfo descLayoutInfo = {};
-    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
+    std::vector<VkDescriptorSetLayoutBinding> descSetLayoutBinding;
 
     VkDescriptorSetLayout descriptorSetLayout;
 
@@ -53,6 +53,8 @@ namespace RenderIn {
     void AddShaderBinding(ShaderType shaderType, uint32_t offsetorstride);
     void AddPushConst(ShaderType pushConstLocation);
     void ShaderModuleCreation(int_fast8_t indice);
+    void AddUniformBuffer(ShaderType shader);
+    void AddImageSampler(ShaderType shader);
     void Activate(VkRenderPass renderPass);
   }; //GFXPipeline
 
@@ -119,13 +121,13 @@ namespace RenderIn {
     std::vector<VkBufferCopy> indiceCpy;
     std::vector<VkBufferImageCopy> imageCpy;
 
-    std::vector<std::pair<CPUBuffer::StageBuffer, CPUBuffer::ModelBuffer>*> verticeBuffers;
-    std::vector<std::pair<CPUBuffer::StageBuffer, CPUBuffer::ModelBuffer>*> indiceBuffers;
-    std::vector<std::pair<CPUBuffer::StageBuffer, CPUBuffer::ImageBuffer>*> imageBuffers;
+    std::vector<std::pair<CPUBuffer::StageBuffer*, CPUBuffer::ModelBuffer*>*> verticeBuffers;
+    std::vector<std::pair<CPUBuffer::StageBuffer*, CPUBuffer::ModelBuffer*>*> indiceBuffers;
+    std::vector<std::pair<CPUBuffer::StageBuffer*, CPUBuffer::ImageBuffer*>*> imageBuffers;
     std::vector<size_t> indiceSizes;
     std::vector<size_t> verticeSizes;
 
-    std::vector<std::optional<VkDescriptorSet>> descSets;
+    std::vector<std::optional<VkDescriptorSet*>> descSets;
     std::vector<std::optional<PushConst*>> pushConsts;
 
     std::vector<VkClearValue> clearColor;
@@ -159,10 +161,11 @@ namespace RenderIn {
     void AddCpyCmdBuffer(VkCommandBuffer buff, uint_fast8_t index);
     void AddPresentCmdBuffer(VkCommandBuffer buff, uint_fast8_t index);
     void AddPushConst(PushConst* pushConst, uint_fast8_t index);
-    void AddDescSet(VkDescriptorSet set, uint_fast8_t index);
-    void AddVerticeBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::ModelBuffer>* buff, size_t verticeCount, uint_fast8_t index);
-    void AddIndiceBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::ModelBuffer>* buff, size_t verticeCount, uint_fast8_t index);
-    void AddImageBuffer(std::pair<CPUBuffer::StageBuffer, CPUBuffer::ImageBuffer>* buff, uint_fast8_t index);
+    void AddDescSet(VkDescriptorSet* set, uint_fast8_t index);
+    void AddVerticeBuffer(std::pair<CPUBuffer::StageBuffer*, CPUBuffer::ModelBuffer*>* buff, size_t verticeCount, uint_fast8_t index);
+    void AddIndiceBuffer(std::pair<CPUBuffer::StageBuffer*, CPUBuffer::ModelBuffer*>* buff, size_t verticeCount, uint_fast8_t index);
+    void AddImageBuffer(std::pair<CPUBuffer::StageBuffer*, CPUBuffer::ImageBuffer*>* buff, uint_fast8_t index);
+    void AddImageCmdBuffer(VkCommandBuffer imageBuff, uint_fast8_t index);
   private:
     void TriggerRenderInput();
     void TriggerCpyCmd();

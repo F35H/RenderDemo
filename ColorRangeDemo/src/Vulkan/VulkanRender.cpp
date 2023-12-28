@@ -19,7 +19,7 @@ Vulkan::VulkanRender::VulkanRender() {
   auto syncFact = std::make_unique<GPUSyncFactory::SyncFactory>(GPUSyncFactory::SyncFactory(&externalProgram));
   externalProgram->Activate();
 
-  externalProgram->getCurrentWindow()->allModels = polyFact->GetFileModels("Stanford");
+  externalProgram->getCurrentWindow()->allModels = polyFact->GetPolyhedra();
   externalProgram->getCurrentWindow()->currentModel = std::make_shared<Polytope>(externalProgram->getCurrentWindow()->allModels[0]);
 
   //Generate
@@ -30,12 +30,16 @@ Vulkan::VulkanRender::VulkanRender() {
   gfxPipe->AddShaderBinding(gfxPipe->Vertex, offsetof(Vertex, pos));
   gfxPipe->AddShaderBinding(gfxPipe->Vertex, offsetof(Vertex, color));
   gfxPipe->AddShaderBinding(gfxPipe->Vertex, offsetof(Vertex, norm));
+  gfxPipe->AddShaderBinding(gfxPipe->Vertex, offsetof(Vertex, texPos));
+  gfxPipe->AddShaderBinding(gfxPipe->Fragment, sizeof(Vertex));
   gfxPipe->AddShaderBinding(gfxPipe->Fragment, sizeof(Vertex));
   gfxPipe->AddShaderBinding(gfxPipe->Fragment, sizeof(Vertex));
   gfxPipe->AddShaderBinding(gfxPipe->Fragment, sizeof(Vertex));
   gfxPipe->AddShaderBinding(gfxPipe->Fragment, sizeof(Vertex));
   gfxPipe->IsStencil(false);
   gfxPipe->AddPushConst(gfxPipe->Fragment);
+  gfxPipe->AddUniformBuffer(gfxPipe->Vertex);
+  gfxPipe->AddImageSampler(gfxPipe->Fragment);
   gfxPipe->Activate(swapChain->renderPass);
 
   gfxPipeDos->AddShaderFile(gfxPipe->Vertex, "shaders/SPIR-5/Outlines/outline.vert.spv");
@@ -43,14 +47,17 @@ Vulkan::VulkanRender::VulkanRender() {
   gfxPipeDos->AddShaderBinding(gfxPipe->Vertex, offsetof(Vertex, pos));
   gfxPipeDos->AddShaderBinding(gfxPipe->Vertex, offsetof(Vertex, color));
   gfxPipeDos->AddShaderBinding(gfxPipe->Vertex, offsetof(Vertex, norm));
+  gfxPipeDos->AddShaderBinding(gfxPipe->Vertex, offsetof(Vertex, texPos));
   gfxPipeDos->AddShaderBinding(gfxPipe->Fragment, sizeof(Vertex));
   gfxPipeDos->AddPushConst(gfxPipe->Fragment);
   gfxPipeDos->IsStencil(true);
+  gfxPipeDos->AddUniformBuffer(gfxPipe->Vertex);
+  gfxPipeDos->AddImageSampler(gfxPipe->Fragment);
   gfxPipeDos->Activate(swapChain->renderPass);
 
   uniFact->Activate(static_cast<float>(swapChain->imageExtent.width) / static_cast<float>(swapChain->imageExtent.height));
 
-  auto shadLin = 7;
+  auto shadLin = 0;
   uniFact->UpdateRenderProperties(uniFact->LightingMisc, glm::vec4(shadLin, 0.0f, 0.0f, 0.0f));
   uniFact->UpdateRenderProperties(uniFact->AmbientLighting, glm::vec4(0.1f, 1.0f, 1.0f, 1.0f));
 
@@ -63,10 +70,13 @@ Vulkan::VulkanRender::VulkanRender() {
     imageSemaphores.emplace_back(syncFact->AddSemaphore());
     presentSemaphores.emplace_back(syncFact->AddSemaphore());
     qFences.emplace_back(syncFact->AddFence());
+
+    bufferFact->AddUniformBuffer(sizeof(UniformBufferObject));
+    bufferFact->AddImageBuffer(new Texture("textures//RGB_24bits_palette_sample_image.jpeg"));
   }; //for everyFrmae
 
-  bufferFact->AddUniformBuffers(numFrames, gfxPipe->descriptorSetLayout);
-  bufferFact->AddCmdBuffers(4); //cpyCmdBuffer
+  bufferFact->AddCmdBuffers(6); //cpyCmdBuffer
+  bufferFact->descPool.value()->Activate(numFrames, gfxPipe->descriptorSetLayout);
 
   for (auto model : externalProgram->getCurrentWindow()->allModels) {
     bufferFact->AddVerticeBuffer(&model);
@@ -92,14 +102,19 @@ Vulkan::VulkanRender::VulkanRender() {
 
     mainLoop->AddGfxPipeline(&gfxPipe, 1);
     mainLoop->AddGfxPipeline(&gfxPipeDos, 0);
+    
     mainLoop->AddPresentCmdBuffer(bufferFact->GetCommandBuffer(mainLoop->currentFrameIndex), 0);
     mainLoop->AddCpyCmdBuffer(bufferFact->GetCommandBuffer(numFrames + mainLoop->currentFrameIndex), 0);
+    mainLoop->AddImageCmdBuffer(bufferFact->GetCommandBuffer(numFrames + numFrames + mainLoop->currentFrameIndex), 0);
+    
     mainLoop->AddVerticeBuffer(&bufferFact->vertexBuffers[externalProgram->getCurrentWindow()->modelIndex], externalProgram->getCurrentWindow()->currentModel->vertices.size(), 0);
     mainLoop->AddVerticeBuffer(&bufferFact->vertexBuffers[externalProgram->getCurrentWindow()->modelIndex], externalProgram->getCurrentWindow()->currentModel->vertices.size(), 1);
     mainLoop->AddIndiceBuffer(&bufferFact->indexBuffers[externalProgram->getCurrentWindow()->modelIndex], externalProgram->getCurrentWindow()->currentModel->GetIndiceSize(), 0);
     mainLoop->AddIndiceBuffer(&bufferFact->indexBuffers[externalProgram->getCurrentWindow()->modelIndex], externalProgram->getCurrentWindow()->currentModel->GetIndiceSize(), 1);
+    mainLoop->AddImageBuffer(&bufferFact->imageBuffers[mainLoop->currentFrameIndex], 0);
     mainLoop->AddPushConst(uniFact->GetPushConst(), 0);
     mainLoop->AddPushConst(uniFact->GetPushConst(), 1);
+
     mainLoop->AddDescSet(bufferFact->GetDescriptorSet(mainLoop->currentFrameIndex), 0);
     mainLoop->AddDescSet(bufferFact->GetDescriptorSet(mainLoop->currentFrameIndex), 1);
 
@@ -110,7 +125,7 @@ Vulkan::VulkanRender::VulkanRender() {
 
     uniFact->UpdatePolledInformation();
     bufferFact->uniformBuffers[
-      mainLoop->currentFrameIndex].CopyData(uniFact->GetUniformBuffer());
+      mainLoop->currentFrameIndex]->CopyData(uniFact->GetUniformBuffer());
 
       mainLoop->ActivateSyncedInput();
       mainLoop->ActivateCmdInput();
