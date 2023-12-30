@@ -19,7 +19,7 @@ Vulkan::VulkanRender::VulkanRender() {
   auto syncFact = std::make_unique<GPUSyncFactory::SyncFactory>(GPUSyncFactory::SyncFactory(&externalProgram));
   externalProgram->Activate();
 
-  externalProgram->getCurrentWindow()->allModels = polyFact->GetPolyhedra();
+  externalProgram->getCurrentWindow()->allModels = polyFact->GetFileModels("Sponza//1.0");
   externalProgram->getCurrentWindow()->currentModel = std::make_shared<Polytope>(externalProgram->getCurrentWindow()->allModels[0]);
 
   //Generate
@@ -39,6 +39,7 @@ Vulkan::VulkanRender::VulkanRender() {
   gfxPipe->IsStencil(false);
   gfxPipe->AddPushConst(gfxPipe->Fragment);
   gfxPipe->AddUniformBuffer(gfxPipe->Vertex);
+  
   gfxPipe->AddImageSampler(gfxPipe->Fragment);
   gfxPipe->Activate(swapChain->renderPass);
 
@@ -65,6 +66,12 @@ Vulkan::VulkanRender::VulkanRender() {
   std::vector<VkSemaphore> presentSemaphores;
   std::vector<VkFence> qFences;
 
+  for (auto model : externalProgram->getCurrentWindow()->allModels) {
+    bufferFact->AddVerticeBuffer(&model);
+    bufferFact->AddIndiceBuffer(&model);
+    bufferFact->AddImageBuffer(model.texture.get());
+  }; //Creating Buffers
+
   int i = 0;
   for (; i != numFrames; ++i) {
     imageSemaphores.emplace_back(syncFact->AddSemaphore());
@@ -72,16 +79,10 @@ Vulkan::VulkanRender::VulkanRender() {
     qFences.emplace_back(syncFact->AddFence());
 
     bufferFact->AddUniformBuffer(sizeof(UniformBufferObject));
-    bufferFact->AddImageBuffer(new Texture("textures//RGB_24bits_palette_sample_image.jpeg"));
   }; //for everyFrmae
 
   bufferFact->AddCmdBuffers(6); //cpyCmdBuffer
   bufferFact->descPool.value()->Activate(numFrames, gfxPipe->descriptorSetLayout);
-
-  for (auto model : externalProgram->getCurrentWindow()->allModels) {
-    bufferFact->AddVerticeBuffer(&model);
-    bufferFact->AddIndiceBuffer(&model);
-  }; //Creating Buffers
 
   //for (auto image : swapChain->texImages) {
   //  bufferFact->AddTextureBuffer(&image);
@@ -107,14 +108,20 @@ Vulkan::VulkanRender::VulkanRender() {
     mainLoop->AddCpyCmdBuffer(bufferFact->GetCommandBuffer(numFrames + mainLoop->currentFrameIndex), 0);
     mainLoop->AddImageCmdBuffer(bufferFact->GetCommandBuffer(numFrames + numFrames + mainLoop->currentFrameIndex), 0);
     
-    mainLoop->AddVerticeBuffer(&bufferFact->vertexBuffers[externalProgram->getCurrentWindow()->modelIndex], externalProgram->getCurrentWindow()->currentModel->vertices.size(), 0);
-    mainLoop->AddVerticeBuffer(&bufferFact->vertexBuffers[externalProgram->getCurrentWindow()->modelIndex], externalProgram->getCurrentWindow()->currentModel->vertices.size(), 1);
-    mainLoop->AddIndiceBuffer(&bufferFact->indexBuffers[externalProgram->getCurrentWindow()->modelIndex], externalProgram->getCurrentWindow()->currentModel->GetIndiceSize(), 0);
-    mainLoop->AddIndiceBuffer(&bufferFact->indexBuffers[externalProgram->getCurrentWindow()->modelIndex], externalProgram->getCurrentWindow()->currentModel->GetIndiceSize(), 1);
-    mainLoop->AddImageBuffer(&bufferFact->imageBuffers[mainLoop->currentFrameIndex], 0);
-    mainLoop->AddPushConst(uniFact->GetPushConst(), 0);
-    mainLoop->AddPushConst(uniFact->GetPushConst(), 1);
+    for (int_fast8_t i = 0; i < externalProgram->getCurrentWindow()->allModels.size(); ++i) {
+      mainLoop->AddVerticeBuffer(&bufferFact->vertexBuffers[i], 
+        bufferFact->vertexBuffers[i].second->GetSize(), 0);
+      mainLoop->AddVerticeBuffer(&bufferFact->vertexBuffers[i], 
+        bufferFact->vertexBuffers[i].second->GetSize(), 1);
+      mainLoop->AddIndiceBuffer(&bufferFact->indexBuffers[i], 
+        externalProgram->getCurrentWindow()->allModels[i].indices.size(), 0);
+      mainLoop->AddIndiceBuffer(&bufferFact->indexBuffers[i], 
+        externalProgram->getCurrentWindow()->allModels[i].indices.size(), 1);
+      mainLoop->AddImageBuffer(&bufferFact->imageBuffers[i], 0);
+    }; //models
 
+    mainLoop->AddPushConst(uniFact->GetPushConst(), 1);
+    mainLoop->AddPushConst(uniFact->GetPushConst(), 0);
     mainLoop->AddDescSet(bufferFact->GetDescriptorSet(mainLoop->currentFrameIndex), 0);
     mainLoop->AddDescSet(bufferFact->GetDescriptorSet(mainLoop->currentFrameIndex), 1);
 

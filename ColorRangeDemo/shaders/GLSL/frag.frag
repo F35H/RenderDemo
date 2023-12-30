@@ -61,7 +61,7 @@ layout(location = 4) in vec2 texPos;
 
 layout(binding = 1) uniform sampler2D imageSampler;
 
-layout(location = 0) out vec3 outColor;
+layout(location = 0) out vec4 outColor;
 
 layout( push_constant ) uniform constants
 {
@@ -91,7 +91,7 @@ uvec3 pcg3d(uvec3 v) {
 } //pcg3d
 
 void main() {
-  vec3 convertedColor = texture(imageSampler, texPos).xyz;
+  vec3 convertedColor = smoothFragColor;
   if (SHADINGTYPE == FLAT) {
     convertedColor = flatFragColor;
   }; //SHADINGTYPE == FLAT
@@ -724,5 +724,5 @@ void main() {
 
 
 
-  outColor = convertedColor;
+  outColor = texture(imageSampler, texPos) * convertedColor;
 } //main

@@ -8,6 +8,21 @@ class FaceFactory {
   //FillT this with classes that build primitives like dodecahedrons, quadrehons, and 
 }; //
 
+
+struct Texture {
+  int height;
+  int width;
+  stbi_uc* data;
+  int texChannel;
+  VkDeviceSize imageSize;
+
+  Texture(std::string filename) {
+    data = stbi_load(filename.c_str(), &width, &height, &texChannel, STBI_rgb_alpha);
+    if (data == NULL) throw std::runtime_error("Loading Texture File Failed");
+    imageSize = width * height * 4;
+  }; //Texture
+}; //Texture
+
 struct Vertex {
   glm::vec3 pos;
   glm::vec3 color;
@@ -22,13 +37,14 @@ public:
   uint16_t edgeCount; //temporary until face class comes into play
   std::vector<Vertex> vertices;
   std::vector<uint32_t> indices;
+  std::shared_ptr<Texture> texture;
 
   size_t GetBufferSize() {
     return sizeof(Vertex) * vertices.size();
   }; //GetBufferSize
 
-  size_t GetIndiceSize() {
-    return indices.size();
+  uint32_t GetIndiceSize() {
+    return indices.size() /** sizeof(uint32_t)*/;
   }; //GetBufferSize
 
   void Shrink(uint16_t divisor) {
@@ -56,6 +72,95 @@ public:
 
     for (size_t i = 0; i < vertices.size(); ++i) glm::normalize(-vertices[i].norm);
   }; //GenerateNorm
+
+  enum ProjType {
+    norms = 0,
+    verts
+  }; //ProjType
+
+  void ProjectSphereUV(ProjType type, glm::mat3 transform = glm::mat3(1.0f)) {
+    for (auto& vertice : vertices) {
+      glm::vec3 normVec; 
+      if (type == verts) {
+        auto transVec = vertice.pos * transform;
+        
+        normVec.x = std::pow(transVec.x,2);
+        normVec.y = std::pow(transVec.y,2);
+        normVec.z = std::pow(transVec.x,2);
+
+        auto norm = sqrt(normVec.x + normVec.y + normVec.z);
+
+        normVec = normVec/norm;
+
+        auto u = 0.5 + (2 * std::atan2(normVec.z, normVec.x)) / (2 * 3.14);
+        auto v = 0.5 + std::sin(normVec.y);
+        vertice.texPos = { u,v };
+      }
+      else if (type == norms) {
+        auto transVec = vertice.norm * transform;
+
+        normVec.x = std::pow(transVec.x, 2);
+        normVec.y = std::pow(transVec.y, 2);
+        normVec.z = std::pow(transVec.x, 2);
+
+        auto norm = sqrt(normVec.x + normVec.y + normVec.z);
+
+        normVec = normVec / norm;
+
+        auto u = 0.5 + (2 * std::atan2(normVec.z, normVec.x)) / (2 * 3.14);
+        auto v = 0.5 + std::sin(normVec.y);
+        vertice.texPos = { u,v };
+      }
+    }; //Vertices
+  }; //ProjectSphere
+
+  void ProjectCylanderUV(ProjType type, glm::mat3 transform = glm::mat3(1.0f)) {
+    for (auto& vertice : vertices) {
+      if (type == verts) {
+        auto transVec = vertice.pos * transform;
+        auto u = std::atan2(1, vertice.pos.x)/(2*3.14);
+        auto v = std::clamp((vertice.pos.y),-1.f,1.f);
+        vertice.texPos = { u,v };      
+      } 
+      else if (type == norms) {
+        auto transVec = vertice.norm * transform;
+        auto u = std::atan2(1, transVec.x) / (2 * 3.14);
+        auto v = std::clamp((transVec.y), -1.f, 1.f);
+        vertice.texPos = { u,v };
+      }
+    }; //Vertices
+  }; //ProjectSphere
+
+  void ProjectLinear(ProjType type, glm::mat3 transform = glm::mat3(1.0f)) {
+    for (auto& vertice : vertices) {
+      glm::vec3 normVec;
+      if (type == verts) {
+        auto transVec = vertice.pos * transform;
+        normVec.x = std::pow(transVec.x, 2);
+        normVec.y = std::pow(transVec.y, 2);
+        normVec.z = std::pow(transVec.x, 2);
+
+        auto norm = sqrt(normVec.x + normVec.y + normVec.z);
+
+        normVec = normVec / norm;
+
+        vertice.texPos = { normVec.x,normVec.z };
+      }
+      else if (type == norms) {
+        auto transVec = vertice.norm * transform;
+        
+        normVec.x = std::pow(transVec.x, 2);
+        normVec.y = std::pow(transVec.y, 2);
+        normVec.z = std::pow(transVec.x, 2);
+
+        auto norm = sqrt(normVec.x + normVec.y + normVec.z);
+
+        normVec = normVec / norm;
+
+        vertice.texPos = { normVec.x,normVec.z };
+      }
+    }; //Vertices
+  }; //ProjectLinear
 }; //Polytope
 
 class EdgeMesh {
@@ -95,17 +200,3 @@ public:
     edges.push_back(*polyhedra);
   }; //CreateEdge
 };
-
-struct Texture {
-  int height;
-  int width;
-  stbi_uc* data;
-  int texChannel;
-  VkDeviceSize imageSize;
-
-  Texture(std::string filename) {
-    data = stbi_load(filename.c_str(), &width, &height, &texChannel, STBI_rgb_alpha);
-    if (data == NULL) throw std::runtime_error("Loading Texture File Failed");
-    imageSize = width * height * 4;
-  }; //Texture
-}; //Texture

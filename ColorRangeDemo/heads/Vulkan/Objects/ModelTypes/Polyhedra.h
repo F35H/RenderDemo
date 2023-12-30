@@ -23,7 +23,7 @@
 
 namespace Polyhedra {
   struct Triangle : Polytope {
-    Triangle() {
+    Triangle(std::string texturePath) {
       edgeCount = 3;
       vertices.resize(3);
 
@@ -35,14 +35,20 @@ namespace Polyhedra {
       vertices[1].color = { 0.0f, 1.0f, 0.0f };
       vertices[2].color = { 0.0f, 0.0f, 1.0f };
 
+      vertices[0].texPos = { 1.0f, 0.0f};
+      vertices[1].texPos = { 0.0f, 1.0f};
+      vertices[2].texPos = { 0.0f, 0.0f};
+
+
       indices = { 0,1,2 };
       
+      texture = std::make_shared<Texture>(Texture(texturePath));
       GenerateNorm();
     }; //Triangle Ctor
   }; //Triangle
 
   struct Quad : Polytope {
-    Quad() {
+    Quad(std::string texturePath) {
       edgeCount = 4;
       vertices.resize(4);
 
@@ -56,17 +62,23 @@ namespace Polyhedra {
       vertices[2].color = { 0.0f, 0.0f, 1.0f };
       vertices[3].color = { 1.0f, 1.0f, 1.0f };
 
+      vertices[0].texPos = { 0.0,1.0 };
+      vertices[1].texPos = { 1.0,1.0 };
+      vertices[2].texPos = { 1.0,0.0 };
+      vertices[3].texPos = { 0.0,1.0 };
+
       indices = {
         0, 1, 2, 
         2, 3, 0
       }; //indices
 
+      texture = std::make_shared<Texture>(Texture(texturePath));
       GenerateNorm();
     }; //Quad Ctor
   }; //Quad
 
   struct Hexagon : Polytope {
-    Hexagon() {
+    Hexagon(std::string texturePath) {
       edgeCount = 6;
       vertices.resize(7);
 
@@ -86,6 +98,15 @@ namespace Polyhedra {
       vertices[5].color = { 1.0f, 1.0f, 0.0f };
       vertices[6].color = { 1.0f, 1.0f, 1.0f };
 
+      vertices[0].texPos = { 0.0,1.0 };
+      vertices[1].texPos = { 1.0,1.0 };
+      vertices[2].texPos = { 1.0,0.0 };
+      vertices[3].texPos = { 0.0,1.0 };
+      vertices[4].texPos = { 0.0,1.0 };
+      vertices[5].texPos = { 1.0,1.0 };
+      vertices[6].texPos = { 1.0,0.0 };
+
+      texture = std::make_shared<Texture>(Texture(texturePath));
       GenerateNorm();
       
       indices = {
@@ -101,7 +122,7 @@ namespace Polyhedra {
 
   namespace PlatonicSolids {
   struct Tetrahedron : Polytope {
-    Tetrahedron() {
+    Tetrahedron(std::string texturePath) {
       edgeCount = 6;
       vertices.resize(4);
 
@@ -124,12 +145,14 @@ namespace Polyhedra {
         1, 2, 3
       }; //indices
 
+      texture = std::make_shared<Texture>(Texture(texturePath));
       GenerateNorm();
+      ProjectSphereUV(norms);
     }; //Tetrahedon Ctor
   }; //Tetrahedron
 
   struct Cube : Polytope {
-    Cube() {
+    Cube(std::string texturePath) {
       edgeCount = 12;
       vertices.resize(8);
 
@@ -150,6 +173,15 @@ namespace Polyhedra {
       vertices[5].color = { 0.0f, 0.5f, 0.5f };
       vertices[6].color = { 0.5f, 0.0f, 0.5f };
       vertices[7].color = { 0.5f, 0.5f, 0.0f };
+
+      vertices[0].texPos = { 0.0,1.0 };
+      vertices[1].texPos = { 1.0,1.0 };
+      vertices[2].texPos = { 1.0,0.0 };
+      vertices[3].texPos = { 0.0,1.0 };
+      vertices[4].texPos = { 0.0,1.0 };
+      vertices[5].texPos = { 1.0,1.0 };
+      vertices[6].texPos = { 1.0,0.0 };
+      vertices[7].texPos = { 0.0,1.0 };
 
       Shrink(2);
 
@@ -173,12 +205,13 @@ namespace Polyhedra {
         3,5,7
       }; //indices
 
+      texture = std::make_shared<Texture>(Texture(texturePath));
       GenerateNorm();
     }; //Cube Ctor
   }; //Cube
 
   struct Octahedron : Polytope {
-    Octahedron() {
+    Octahedron(std::string texturePath) {
       edgeCount = 12;
       vertices.resize(6);
 
@@ -208,14 +241,16 @@ namespace Polyhedra {
           3,5,4,
       }; //indices
 
+      texture = std::make_shared<Texture>(Texture(texturePath));
       GenerateNorm();
+      ProjectSphereUV(norms);
       Shrink(2);
     }; //Octahedron
-  
+    
   }; //Octahedron
 
   struct Icosahedron : Polytope {
-    Icosahedron() {
+    Icosahedron(std::string texturePath) {
       edgeCount = 30;
       vertices.resize(12);
 
@@ -272,14 +307,16 @@ namespace Polyhedra {
         9,11,10,
       }; //indices
       
+      texture = std::make_shared<Texture>(Texture(texturePath));
       Shrink(2);
       GenerateNorm();
+      ProjectSphereUV(norms);
     }; //Icosahedron
   }; //Icosahedron
 
   struct Dodecahedron : Polytope {
     
-    Dodecahedron() {
+    Dodecahedron(std::string texturePath) {
       edgeCount = 30;
       vertices.resize(20);
 
@@ -381,6 +418,8 @@ namespace Polyhedra {
 
       Shrink(2);
       GenerateNorm();
+      texture = std::make_shared<Texture>(Texture(texturePath));
+      ProjectSphereUV(norms);
     }; //Dodecahedron
 
   }; //Dodecahedron
@@ -388,7 +427,7 @@ namespace Polyhedra {
 
   namespace ArchemedianSolids {
     struct Cuboctahedron : Polytope {
-      Cuboctahedron() {
+      Cuboctahedron(std::string texturePath) {
         edgeCount = 24;
         vertices.resize(12);
 
@@ -450,14 +489,16 @@ namespace Polyhedra {
             7,8,11,
             7,9,11,
         }; //indices
+      texture = std::make_shared<Texture>(Texture(texturePath));
       Shrink(2);
       GenerateNorm();
+      ProjectSphereUV(norms);
       }; //Cuboctahedron
       
     }; //CubOctahedron
 
     struct Icosidodecahedron : Polytope {
-      Icosidodecahedron() {
+      Icosidodecahedron(std::string texturePath) {
         edgeCount = 60;
         
         vertices.resize(30);
@@ -601,14 +642,16 @@ namespace Polyhedra {
             24,27,26
           }; //indices
 
+          texture = std::make_shared<Texture>(Texture(texturePath));
           Shrink(2);
           GenerateNorm();
+          ProjectSphereUV(norms);
       }; //Icosidodecahedron
     }; //Icosidodecahedron
 
 
     struct TruncatedTetrahedron : Polytope {
-      TruncatedTetrahedron() {
+      TruncatedTetrahedron(std::string texturePath) {
         edgeCount = 18;
 
         vertices.resize(12);
@@ -669,13 +712,15 @@ namespace Polyhedra {
           8,11,10,
         }; //indices
 
+        texture = std::make_shared<Texture>(Texture(texturePath));
         Shrink(2);
         GenerateNorm();
+        ProjectSphereUV(norms);
       }; //TruncatedTetrahedron 
     }; //TruncatedTetrahedron 
 
     struct TruncatedCube : Polytope {
-      TruncatedCube() {
+      TruncatedCube(std::string texturePath) {
         edgeCount = 36;
         vertices.resize(24);
 
@@ -759,7 +804,7 @@ namespace Polyhedra {
 
 
     struct TruncatedOctahedron : Polytope {
-      TruncatedOctahedron() {
+      TruncatedOctahedron(std::string texturePath) {
         edgeCount = 36;
         vertices.resize(24);
 
@@ -881,13 +926,15 @@ namespace Polyhedra {
           23,21,17
         }; //indices
 
+        texture = std::make_shared<Texture>(Texture(texturePath));
         Shrink(2);
         GenerateNorm();
+        ProjectSphereUV(norms);
       }; //TruncatedOctahedron
 
 
       struct TruncatedIcosahedron : Polytope {
-        TruncatedIcosahedron() {
+        TruncatedIcosahedron(std::string texturePath) {
           edgeCount = 36;
           vertices.resize(24);
 

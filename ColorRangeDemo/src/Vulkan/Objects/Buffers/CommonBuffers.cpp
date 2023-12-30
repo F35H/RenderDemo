@@ -32,10 +32,11 @@ void BufferFactory::AddUniformBuffer(size_t uniBuffSize) {
 }; //AddUniformBuffer
 void BufferFactory::AddImageBuffer(Texture* t) {
   if (!descPool) descPool = std::make_unique<DescPool>(DescPool());
-  descPool.value().get()->imageBuffs.push_back(ImageBuffer(t->height,t->width));
   imageBuffers.push_back({
     new StageBuffer(t->imageSize,t->data),
-    &descPool.value().get()->imageBuffs[descPool.value().get()->imageBuffs.size()-1]});
+    new ImageBuffer(t->height,t->width) 
+  });
+  descPool.value().get()->imageBuffs.push_back(*imageBuffers[imageBuffers.size() - 1].second);
 }; //AddUniformBuffer
 void BufferFactory::AddCmdBuffers(UINT cmdBuffNum) {
   if (!cmdPool) cmdPool = std::make_unique<CmdPool>(CmdPool());
@@ -59,8 +60,8 @@ std::pair<StageBuffer*, ModelBuffer*> BufferFactory::AddVerticeBuffer(Polytope* 
 }; //AddVertexBuffer
 std::pair<StageBuffer*, ModelBuffer*> BufferFactory::AddIndiceBuffer(Polytope* model) {
   indexBuffers.push_back({
-    new StageBuffer(model->GetIndiceSize() * sizeof(uint32_t), model->indices.data()),
-    new ModelBuffer(model->GetIndiceSize() * sizeof(uint32_t),VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) });
+    new StageBuffer(model->GetIndiceSize() * sizeof(model->indices[0]), model->indices.data()),
+    new ModelBuffer(model->GetIndiceSize() * sizeof(model->indices[0]),VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) });
   return indexBuffers[indexBuffers.size() - 1];
 }; //AddVertexBuffer
 VkCommandBuffer BufferFactory::GetCommandBuffer(uint_fast8_t indice) {
@@ -311,9 +312,9 @@ ImageBuffer::ImageBuffer(uint32_t h, uint32_t w) {
   samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
   samplerInfo.magFilter = VK_FILTER_LINEAR;
   samplerInfo.minFilter = VK_FILTER_LINEAR;
-  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
   samplerInfo.anisotropyEnable = VK_TRUE;
   samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
   samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;

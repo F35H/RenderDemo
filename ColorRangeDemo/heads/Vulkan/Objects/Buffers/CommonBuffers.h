@@ -36,6 +36,7 @@ namespace CPUBuffer {
     VkImage image;
     VkImageView imageView;
     bool fromStagedBuffer = true;
+    bool readyToCpy = false;
     uint32_t width;
     uint32_t height;
     ImageBuffer(uint32_t height, uint32_t width);

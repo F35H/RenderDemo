@@ -42,14 +42,12 @@ void MainLoop::ActivateSyncedInput() {
 void MainLoop::ActivateCmdInput() {
   TriggerRenderInput();
   TriggerCpyCmd();
-  TriggerTransitionCmd();
 }; //ActivateCommandInput
 void MainLoop::ActivateSyncedOutput() {
   totalCmdBuffers.clear();
   totalCmdBuffers.reserve(cpyCmdBuffers.size() + presentCmdBuffers.size());
   totalCmdBuffers.insert(totalCmdBuffers.begin(), cpyCmdBuffers.begin(), cpyCmdBuffers.end());
   totalCmdBuffers.insert(totalCmdBuffers.begin(), presentCmdBuffers.begin(), presentCmdBuffers.end());
-  totalCmdBuffers.insert(totalCmdBuffers.begin(), imageCmdBuffers.begin(), imageCmdBuffers.end());
 
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -220,33 +218,87 @@ void MainLoop::TriggerCpyCmd() {
       indiceBuffers[i]->second->fromStagedBuffer = true;
     }; //if indiceBuffers
 
-    if (imageBuffers.size()>i &&
-      !imageBuffers[i]->second->fromStagedBuffer &&
-      imageBuffers[i]->first->writtenTo) {
+    if (imageBuffers.size()>i) {
 
-      imageCpy[i].bufferOffset = 0;
-      imageCpy[i].bufferRowLength = 0;
-      imageCpy[i].bufferImageHeight = 0;
-      imageCpy[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-      imageCpy[i].imageSubresource.mipLevel = 0;
-      imageCpy[i].imageSubresource.baseArrayLayer = 0;
-      imageCpy[i].imageSubresource.layerCount = 1;
-      imageCpy[i].imageOffset = { 0, 0, 0 };
-      imageCpy[i].imageExtent = { 
-        imageBuffers[i]->second->width,
-        imageBuffers[i]->second->height, 1 };
+      if (imageBuffers[i]->second->readyToCpy) {
+        imageCpy[i].bufferOffset = 0;
+        imageCpy[i].bufferRowLength = 0;
+        imageCpy[i].bufferImageHeight = 0;
+        imageCpy[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageCpy[i].imageSubresource.mipLevel = 0;
+        imageCpy[i].imageSubresource.baseArrayLayer = 0;
+        imageCpy[i].imageSubresource.layerCount = 1;
+        imageCpy[i].imageOffset = { 0, 0, 0 };
+        imageCpy[i].imageExtent = {
+          imageBuffers[i]->second->width,
+          imageBuffers[i]->second->height, 1 };
 
-      vkCmdCopyBufferToImage(
-        cpyCmdBuffers[recurseIndex.value()],
-        *imageBuffers[i]->first->GetBuffer(),
-        imageBuffers[i]->second->image,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1, &imageCpy[i]
-      ); //vkCMdCopyBuffer
+        vkCmdCopyBufferToImage(
+          cpyCmdBuffers[recurseIndex.value()],
+          *imageBuffers[i]->first->GetBuffer(),
+          imageBuffers[i]->second->image,
+          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+          1, &imageCpy[i]
+        ); //vkCMdCopyBuffer
 
-      imageBuffers[i]->first->writtenTo = false;
-      imageBuffers[i]->second->fromStagedBuffer = true;
+        imageBuffers[i]->second->readyToCpy = false;
+      } //if readyToCpy
+      else {
+        VkImageSubresourceRange subRange{};
+        VkImageMemoryBarrier barrier{};
+        subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subRange.baseMipLevel = 0;
+        subRange.levelCount = 1;
+        subRange.baseArrayLayer = 0;
+        subRange.layerCount = 1;
+
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = imageBuffers[i]->second->oldLayout;
+        barrier.newLayout = imageBuffers[i]->second->newLayout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = imageBuffers[i]->second->image;
+        barrier.subresourceRange = subRange;
+
+        if (imageBuffers[i]->second->oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+          imageBuffers[i]->second->newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+          barrier.srcAccessMask = 0;
+          barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+          vkCmdPipelineBarrier(
+            cpyCmdBuffers[recurseIndex.value()],
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0, 0, nullptr,
+            0, nullptr,
+            1, &barrier
+          ); //vkCmdPipelineBarrier
+
+          imageBuffers[i]->second->readyToCpy = true;
+          imageBuffers[i]->second->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+          imageBuffers[i]->second->newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        }
+        else if (imageBuffers[i]->second->oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+          imageBuffers[i]->second->newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+          
+          barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+          barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+          vkCmdPipelineBarrier(
+            cpyCmdBuffers[recurseIndex.value()],
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0, 0, nullptr,
+            0, nullptr,
+            1, &barrier
+          ); //vkCmdPipelineBarrier
+
+          imageBuffers[i]->second->oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+          imageBuffers[i]->second->newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        }
+      }; //else
     } //if Stage Ready
+
   }; //i < size
 
   vkEndCommandBuffer(cpyCmdBuffers[recurseIndex.value()]);

@@ -155,7 +155,8 @@ ExternalProgram::ExternalProgram(int winNum) {
 
 
   const std::vector<const char*>deviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_EXT_ROBUSTNESS_2_EXTENSION_NAME
   }; //DeviceExtensions
 
 
