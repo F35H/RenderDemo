@@ -107,23 +107,63 @@ struct UniformFactory {
     }; //switch
   }; //UpdateRenderProperties
 
-  void UpdatePolledInformation() {
+  void UpdatePolledInformationView() {
     auto cT = std::chrono::high_resolution_clock::now();
-
     delta = std::chrono::duration<float,
       std::chrono::seconds::period>(previousTime -
         cT).count();
 
     previousTime = cT;
 
+
     if (RotateTrue) {
-      static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->view =
-        glm::rotate(static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->
-          view, glm::radians(90.0f * delta), glm::vec3(0.0f, 1.0f, 0.0f));
+    auto rot = glm::mat4_cast(
+      glm::normalize(glm::angleAxis(glm::radians(90.f * delta), glm::vec3(0, 1, 0))));
+
+      static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->model *= rot;
 
       if (degree < degreeLimit) { degree += delta * degreeIncrement; };
       if (degree >= degreeLimit) { degree = 0; };
     }; //if (RotateTrue)
+    
+    if (FreeMove) {
+      auto yRot = glm::mat4_cast(glm::normalize(glm::angleAxis(glm::radians(CamDegree->y * delta), glm::vec3(0.0f, 1.0f, 0.0f))));
+      auto xRot = glm::mat4_cast(glm::normalize(glm::angleAxis(glm::radians(CamDegree->x * delta), glm::vec3(1.0f, 0.0f, 0.0f))));
+      auto zRot = glm::mat4_cast(glm::normalize(glm::angleAxis(glm::radians(CamDegree->z * delta), glm::vec3(1.0f, 0.0f, 1.0f))));
+      auto rot = yRot * xRot * zRot;
+      glm::translate(static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->model, (*CamPos * delta));
+      static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->model *= rot;
+    }; //FreeMove
+
+  }; //UpdatePolledInformation
+
+  void UpdatePolledInformationModel() {
+    auto cT = std::chrono::high_resolution_clock::now();
+    delta = std::chrono::duration<float,
+      std::chrono::seconds::period>(previousTime -
+        cT).count();
+
+    previousTime = cT;
+
+
+    if (RotateTrue) {
+      auto rot = glm::mat4_cast(
+        glm::normalize(glm::angleAxis(glm::radians(90.f * delta), glm::vec3(0, 1, 0))));
+
+      static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->view *= rot;
+
+      if (degree < degreeLimit) { degree += delta * degreeIncrement; };
+      if (degree >= degreeLimit) { degree = 0; };
+    }; //if (RotateTrue)
+
+    if (FreeMove) {
+      auto yRot = glm::mat4_cast(glm::normalize(glm::angleAxis(glm::radians(CamDegree->y * delta), glm::vec3(0.0f, 1.0f, 0.0f))));
+      auto xRot = glm::mat4_cast(glm::normalize(glm::angleAxis(glm::radians(CamDegree->x * delta), glm::vec3(1.0f, 0.0f, 0.0f))));
+      auto zRot = glm::mat4_cast(glm::normalize(glm::angleAxis(glm::radians(CamDegree->z * delta), glm::vec3(1.0f, 0.0f, 1.0f))));
+      auto rot = yRot * xRot * zRot;
+      glm::translate(static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->view, (*CamPos * delta));
+      static_cast<UniformBufferObject*>(Uniforms[UniformType::Position]->uniform)->view *= rot;
+    }; //FreeMove
 
   }; //UpdatePolledInformation
 
@@ -137,59 +177,45 @@ struct UniformFactory {
 }; //UniformFactory
 
 
-struct newUniformFactory {
-  std::shared_ptr<ExternalProgram> externalProgram;
-  VkResult result;
-
-  std::vector<PushConst> pushConsts;
-  std::vector<UniformBufferObject> uniBuffers;
-  std::vector<VkSampler> samplers;
-  
-  float aspectRatio;
-  newUniformFactory() = default;
-
-  void Activate(float aspect) {
-    aspectRatio = aspect;
-  }; //Activate
-
-  void CreatePushConst() {
-    pushConsts.resize(pushConsts.size() + 1);
-    pushConsts[pushConsts.size() - 1] = PushConst();
-  }; //CreatePushConst
-
-  void CreateUBO() {
-    uniBuffers.resize(uniBuffers.size() + 1);
-    uniBuffers[uniBuffers.size() - 1].model = glm::mat4(1.0f);
-    uniBuffers[uniBuffers.size() - 1].view = glm::lookAt(
-      glm::vec3(0.0f, 0.0f, 3.0f), 
-      glm::vec3(0.0f, 0.0f, 0.0f), 
-      glm::vec3(0.0f, 1.0f, 0.0f));
-    uniBuffers[uniBuffers.size() - 1].proj = glm::perspective(
-      glm::radians(45.0f), 
-      aspectRatio, 0.1f, 10.0f);
-  }; //CreaeUBO
-
-  void CreateSampler() {
-    samplers.resize(samplers.size() + 1);
-    VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(externalProgram->physicalDevice, &properties);
-
-    VkSamplerCreateInfo samplerInfo{};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
-    result = vkCreateSampler(externalProgram->device, &samplerInfo, nullptr, &samplers[samplers.size() - 1]);
-    errorHandler->ConfirmSuccess(result, "Creating Texture Sampler");
-  }; //CreateSampler
-}; //newUniformFactory
+//struct UniformFactory {
+//  std::shared_ptr<ExternalProgram> externalProgram;
+//  VkResult result;
+//
+//  std::vector<PushConst> pushConsts;
+//  std::vector<UniformBufferObject> uniBuffers;
+//  
+//  float aspectRatio;
+//  UniformFactory() = default;
+//
+//  void Activate(float aspect) {
+//    aspectRatio = aspect;
+//  }; //Activate
+//
+//  void CreatePushConst() {
+//    pushConsts.resize(pushConsts.size() + 1);
+//    pushConsts[pushConsts.size() - 1] = PushConst();
+//  }; //CreatePushConst
+//
+//  void CreateUBO() {
+//    uniBuffers.resize(uniBuffers.size() + 1);
+//    uniBuffers[uniBuffers.size() - 1].model = glm::mat4(1.0f);
+//    uniBuffers[uniBuffers.size() - 1].view = glm::lookAt(
+//      glm::vec3(0.0f, 0.0f, 3.0f), 
+//      glm::vec3(0.0f, 0.0f, 0.0f), 
+//      glm::vec3(0.0f, 1.0f, 0.0f));
+//    uniBuffers[uniBuffers.size() - 1].proj = glm::perspective(
+//      glm::radians(45.0f), 
+//      aspectRatio, 0.1f, 10.0f);
+//  }; //CreaeUBO
+//
+//  void UpdateView(uint_fast8_t index, glm::mat4 matrix) {
+//    uniBuffers[index].view = matrix;
+//  }; //UpdateView
+//  void UpdateModel(uint_fast8_t index, glm::mat4 matrix) {
+//    uniBuffers[index].model = matrix;
+//  }; //UpdateModel
+//
+//  void UpdatePushConst() {
+//
+//  }; //UpdateUniBuff
+//}; //newUniformFactory

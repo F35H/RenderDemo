@@ -124,6 +124,22 @@ namespace RenderOut {
 static std::unique_ptr <RenderOut::ErrorHandler>      errorHandler;
 
 struct Window {
+  struct SmoothMove {
+    bool rLeft = false;
+    bool rRight = false;
+    bool rUp = false;
+    bool rDown = false;
+
+    bool tUp = false;
+    bool tRight = false;
+    bool tDown = false;
+    bool tLeft = false;
+    bool tForward = false;
+    bool tBackward = false;
+  }; //smoothMove
+
+  SmoothMove smoothMove = SmoothMove();
+  
   GLFWwindow* window;
   VkSurfaceKHR surface;
 

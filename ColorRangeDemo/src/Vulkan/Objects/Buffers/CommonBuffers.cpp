@@ -24,20 +24,27 @@ BufferFactory::BufferFactory(std::shared_ptr<ExternalProgram>* eProgram) {
 void BufferFactory::AddFrameBuffer(std::vector<VkImageView> attachments, VkRenderPass renderPass, UINT scWidth, UINT scHeight) {
   frameBuffers.emplace_back(FrameBuffer(attachments, renderPass, scWidth, scHeight));
 }; //AddFrameBuffer
-void BufferFactory::AddUniformBuffer(size_t uniBuffSize) {
-  if (!descPool) descPool = std::make_unique<DescPool>(DescPool());
+void BufferFactory::AddUniformBuffer(size_t uniBuffSize, uint_fast8_t descPool) {
+  if (descPools.size() <= descPool) { descPools.resize(descPool + 1); descPools[descPool] = std::make_unique<DescPool>(DescPool()); };
   auto ptr = new UniformBuffer(uniBuffSize);
-  descPool.value().get()->uniBuffs.emplace_back(*ptr);
-  uniformBuffers.push_back(ptr);
+  descPools[descPool]->uniBuffs.push_back(*ptr);
 }; //AddUniformBuffer
-void BufferFactory::AddImageBuffer(Texture* t) {
-  if (!descPool) descPool = std::make_unique<DescPool>(DescPool());
-  imageBuffers.push_back({
+std::pair<StageBuffer*, TextureImage*> BufferFactory::AddTextureImage(Texture* t, uint_fast8_t descPool) {
+  if (descPools.size() <= descPool) { descPools.resize(descPool + 1); descPools[descPool] = std::make_unique<DescPool>(DescPool()); };
+  descPools[descPool]->imageBuffs.push_back({
     new StageBuffer(t->imageSize,t->data),
-    new ImageBuffer(t->height,t->width) 
-  });
-  descPool.value().get()->imageBuffs.push_back(*imageBuffers[imageBuffers.size() - 1].second);
-}; //AddUniformBuffer
+    new TextureImage(t->height,t->width) 
+  }); //AddTextureImage
+  return descPools[descPool]->imageBuffs[descPools[descPool]->imageBuffs.size() - 1];
+}; //AddTextureImage
+std::pair<StageBuffer*, ComputeImage*> BufferFactory::AddComputeImage(uint32_t height, uint32_t width, uint_fast8_t descPool) {
+  if (descPools.size() <= descPool) { descPools.resize(descPool + 1); descPools[descPool] = std::make_unique<DescPool>(DescPool()); };
+  descPools[descPool]->computeImages.push_back({
+    new StageBuffer(height * width * 4,nullptr),
+    new ComputeImage(height,width)
+    }); //AddTextureImage
+  return descPools[descPool]->computeImages[descPools[descPool]->computeImages.size()-1];
+}; //AddTextureImage
 void BufferFactory::AddCmdBuffers(UINT cmdBuffNum) {
   if (!cmdPool) cmdPool = std::make_unique<CmdPool>(CmdPool());
   cmdPool.value().get()->cmdBuffers.resize(cmdBuffNum);
@@ -67,8 +74,17 @@ std::pair<StageBuffer*, ModelBuffer*> BufferFactory::AddIndiceBuffer(Polytope* m
 VkCommandBuffer BufferFactory::GetCommandBuffer(uint_fast8_t indice) {
   return cmdPool.value().get()->cmdBuffers[indice];
 }; //GetCommandBuffer
-VkDescriptorSet* BufferFactory::GetDescriptorSet(uint_fast8_t indice) {
-  return &descPool.value().get()->descSets[indice];
+VkDescriptorSet* BufferFactory::GetDescriptorSet(uint_fast8_t indice, uint_fast8_t descPool) {
+  return &descPools[descPool]->descSets[indice];
+}; //GetCommandBuffer
+UniformBuffer* BufferFactory::GetUniformBuffer(uint_fast8_t indice, uint_fast8_t descPool) {
+  return &descPools[descPool]->uniBuffs[indice];
+}; //GetCommandBuffer
+std::pair<StageBuffer*, TextureImage*>* BufferFactory::GetTextureImage(uint_fast8_t indice, uint_fast8_t descPool) {
+  return &descPools[descPool]->imageBuffs[indice];
+}; //GetCommandBuffer
+std::pair<StageBuffer*, ComputeImage*>* BufferFactory::GetComputeImage(uint_fast8_t indice, uint_fast8_t descPool) {
+  return &descPools[descPool]->computeImages[indice];
 }; //GetCommandBuffer
 
 
@@ -109,9 +125,6 @@ UniformBuffer::UniformBuffer(size_t bufferSize) {
   vkBindBufferMemory(externalProgram->device, buffer, bufferMemory, 0);
   vkMapMemory(externalProgram->device, bufferMemory, 0, buffInfo.size, 0, &mappedBuffer);
 }; //UniformBuffer
-void UniformBuffer::CopyData(void* srcPtr) {
-  memcpy(mappedBuffer, srcPtr, buffInfo.size);
-}; //MapBuffer
 
 //CmdPool
 CmdPool::CmdPool() {
@@ -125,21 +138,37 @@ CmdPool::CmdPool() {
 }; //CmdPool
 
 //DescPool
-void DescPool::Activate(uint32_t descNum, VkDescriptorSetLayout descSetLayout) {
+void DescPool::Activate(VkDescriptorSetLayout descSetLayout) {
+  uint32_t descNum = computeImages.size() + uniBuffs.size() + imageBuffs.size();
   descSets.resize(descNum);
   
   //DescriptorPools
   std::vector<VkDescriptorPoolSize> poolSizes;
-  poolSizes.resize(2);
-  poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  poolSizes[0].descriptorCount = descNum;
-  poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-  poolSizes[1].descriptorCount = descNum;
+
+  if (uniBuffs.size() > 0) {
+    VkDescriptorPoolSize pSize{};
+    pSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pSize.descriptorCount = uniBuffs.size() * sizeof(UniformBufferObject);
+    poolSizes.push_back(pSize);
+  } //uniBuffSize
+  if (imageBuffs.size() > 0) {
+    VkDescriptorPoolSize pSize{};
+    pSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    pSize.descriptorCount = imageBuffs.size() * sizeof(VkImage);;
+    poolSizes.push_back(pSize);
+  } //uniBuffSize
+  if (computeImages.size() > 0) {
+    VkDescriptorPoolSize pSize{};
+    pSize.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    pSize.descriptorCount = computeImages.size() * 2;
+    poolSizes.push_back(pSize);
+  } //uniBuffSize
 
   descPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
   descPoolInfo.poolSizeCount = poolSizes.size();
   descPoolInfo.pPoolSizes = poolSizes.data();
   descPoolInfo.maxSets = descNum;
+  descPoolInfo.flags = 0;
 
   auto result = vkCreateDescriptorPool(externalProgram->device, &descPoolInfo, nullptr, &descPool);
   errorHandler->ConfirmSuccess(result, "Creating Descriptor Pool");
@@ -156,34 +185,57 @@ void DescPool::Activate(uint32_t descNum, VkDescriptorSetLayout descSetLayout) {
   errorHandler->ConfirmSuccess(result, "Allocating DescriptorSets");
 
   //DescriptorWrite
-
   for (uint_fast8_t i = descNum-1; i < descNum; --i) {
-    std::vector<VkWriteDescriptorSet> descWrites(2);
-    std::pair<VkDescriptorBufferInfo, VkDescriptorImageInfo> descInfo;
+    std::vector<VkWriteDescriptorSet> descWrites;
     
-    descInfo.first.buffer = *uniBuffs[i].GetBuffer();
-    descInfo.first.offset = 0;
-    descInfo.first.range = uniBuffs[i].GetSize();
+    if (uniBuffs.size() > i) {
+      VkDescriptorBufferInfo buffInfo{};
+      buffInfo.buffer = *uniBuffs[i].GetBuffer();
+      buffInfo.offset = 0;
+      buffInfo.range = uniBuffs[i].GetSize();
 
-    descInfo.second.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    descInfo.second.imageView = imageBuffs[i].imageView;
-    descInfo.second.sampler = imageBuffs[i].imageSampler;
-    
-    descWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descWrites[0].dstSet = descSets[i];
-    descWrites[0].dstBinding = 0;
-    descWrites[0].dstArrayElement = 0;
-    descWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descWrites[0].descriptorCount = 1;
-    descWrites[0].pBufferInfo = &descInfo.first;
+      VkWriteDescriptorSet set{};
+      set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      set.dstSet = descSets[i];
+      set.dstBinding = 0;
+      set.dstArrayElement = 0;
+      set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      set.descriptorCount = 1;
+      set.pBufferInfo = &buffInfo;
+      descWrites.push_back(set);
+    }; //if Size > 0
 
-    descWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descWrites[1].dstSet = descSets[i];
-    descWrites[1].dstBinding = 1;
-    descWrites[1].dstArrayElement = 0;
-    descWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descWrites[1].descriptorCount = 1;
-    descWrites[1].pImageInfo = &descInfo.second;
+    if (imageBuffs.size() > i) {
+      VkDescriptorImageInfo imageInfo{};
+      imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      imageInfo.imageView = imageBuffs[i].second->imageView;
+      imageInfo.sampler = imageBuffs[i].second->imageSampler;
+
+      VkWriteDescriptorSet set{};
+      set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      set.dstSet = descSets[i];
+      set.dstBinding = 1;
+      set.dstArrayElement = 0;
+      set.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      set.descriptorCount = 1;
+      set.pImageInfo = &imageInfo;
+      descWrites.push_back(set);
+    }; //If Size is  > 0
+
+    if (computeImages.size() > i) {
+      VkDescriptorImageInfo imageInfo{};
+      imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+      imageInfo.imageView = computeImages[i].second->imageView;
+
+      VkWriteDescriptorSet set{};
+      set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      set.dstSet = descSets[i];
+      set.dstBinding = 1;
+      set.dstArrayElement = 0;
+      set.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+      set.pImageInfo = &imageInfo;
+      descWrites.push_back(set);
+    }; //If Size is  > 0
 
     vkUpdateDescriptorSets(externalProgram->device, static_cast<uint32_t>(descWrites.size()), descWrites.data(), 0, nullptr);
   }; //everyDescNum
@@ -209,6 +261,9 @@ ModelBuffer::ModelBuffer(size_t buffSize, uint32_t buffFlags) {
 //StageBuffer
 StageBuffer::StageBuffer(size_t buffSize, void* srcPtr) {
   buffInfo.size = buffSize;
+  CreateBuffer(srcPtr);
+}; //StageBuffer
+void StageBuffer::CreateBuffer(void* srcPtr) {
   buffInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   buffInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
   auto result = vkCreateBuffer(externalProgram->device, &buffInfo, nullptr, &buffer);
@@ -221,11 +276,18 @@ StageBuffer::StageBuffer(size_t buffSize, void* srcPtr) {
   result = vkAllocateMemory(externalProgram->device, &allocInfo, nullptr, &bufferMemory);
   errorHandler->ConfirmSuccess(result, "Allocating Stage Buffer Memory");
   vkBindBufferMemory(externalProgram->device, buffer, bufferMemory, 0);
-  vkMapMemory(externalProgram->device, bufferMemory, 0, buffSize, 0, &mappedBuffer);
+  vkMapMemory(externalProgram->device, bufferMemory, 0, buffInfo.size, 0, &mappedBuffer);
   memcpy(mappedBuffer, srcPtr, buffInfo.size);
   vkUnmapMemory(externalProgram->device, bufferMemory);
   writtenTo = true;
-}; //StageBuffer
+}; //StageBufferCreateBuffer
+
+void StageBuffer::Reset(size_t buffSize, void* srcPtr) {
+  vkDestroyBuffer(externalProgram->device, buffer, nullptr);
+  vkFreeMemory(externalProgram->device, bufferMemory, nullptr);
+  buffInfo.size = buffSize;
+  CreateBuffer(srcPtr);
+}; //Reset
 
 //GeneralBuffer
 const VkBuffer* GeneralBuffer::GetBuffer() {
@@ -245,14 +307,21 @@ void GeneralBuffer::CreateBuffer() {
 void GeneralBuffer::ConfirmMemoryType() {
   Utility::ConfirmMemory(&memRequirements, &allocProperties, &allocInfo);
 }; //ConfirmMemoryType
+void GeneralBuffer::CopyData(void* srcPtr) {
+  memcpy(mappedBuffer, srcPtr, buffInfo.size);
+}; //MapBuffer
 
-//ImageBuffer 
-ImageBuffer::ImageBuffer(uint32_t h, uint32_t w) {
-  VkImageCreateInfo texInfo;
-  VkBufferImageCopy imageCpy;
-
+//TextureImage
+TextureImage::TextureImage(uint32_t h, uint32_t w) {
   height = h;
   width = w;
+  CreateImage(h,w);
+  oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+}; //TextureImage
+void TextureImage::CreateImage(uint32_t h, uint32_t w) {
+  VkImageCreateInfo texInfo;
+  VkBufferImageCopy imageCpy;
 
   texInfo = {};
   texInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -272,28 +341,28 @@ ImageBuffer::ImageBuffer(uint32_t h, uint32_t w) {
   texInfo.samples = VK_SAMPLE_COUNT_1_BIT;
   texInfo.flags = 0;
 
-  VkResult result = vkCreateImage(externalProgram->device, &texInfo, nullptr, &image);
+  image = new VkImage();
+  VkResult result = vkCreateImage(externalProgram->device, &texInfo, nullptr, image);
   errorHandler->ConfirmSuccess(result, "Creating Texture Image");
 
   VkMemoryRequirements memRequirements;
-  vkGetImageMemoryRequirements(externalProgram->device, image, &memRequirements);
+  vkGetImageMemoryRequirements(externalProgram->device, *image, &memRequirements);
 
   VkMemoryAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
   allocInfo.allocationSize = memRequirements.size;
   auto propFlag = static_cast<VkMemoryPropertyFlags>(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
   Utility::ConfirmMemory(&memRequirements, &propFlag, &allocInfo);
-  VkDeviceMemory memory;
 
   result = vkAllocateMemory(externalProgram->device, &allocInfo, nullptr, &memory);
   errorHandler->ConfirmSuccess(result, "Allocating Image Memory");
 
-  vkBindImageMemory(externalProgram->device, image, memory, 0);
+  vkBindImageMemory(externalProgram->device, *image, memory, 0);
 
 
   VkImageViewCreateInfo viewInfo{};
   viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-  viewInfo.image = image;
+  viewInfo.image = *image;
   viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
   viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
   viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -307,7 +376,7 @@ ImageBuffer::ImageBuffer(uint32_t h, uint32_t w) {
 
   VkPhysicalDeviceProperties properties{};
   vkGetPhysicalDeviceProperties(externalProgram->physicalDevice, &properties);
-  
+
   VkSamplerCreateInfo samplerInfo{};
   samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
   samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -325,7 +394,82 @@ ImageBuffer::ImageBuffer(uint32_t h, uint32_t w) {
 
   result = vkCreateSampler(externalProgram->device, &samplerInfo, nullptr, &imageSampler);
   errorHandler->ConfirmSuccess(result, "Create Texture Sampler");
-
+}; //CreateImage
+void TextureImage::Reset() {
+  vkDestroyImage(externalProgram->device, *image, nullptr);
+  vkFreeMemory(externalProgram->device, memory, nullptr);
+  CreateImage(width, height);
+  readyToCpy = false;
   oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
   newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-}; //ImageBuffer
+}; //ResetComputeImage
+
+//Compute Image
+ComputeImage::ComputeImage(uint32_t h, uint32_t w) {
+  height = h;
+  width = w;
+  CreateImage(h,w);
+  oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+}; //ComputeImage
+
+void ComputeImage::CreateImage(uint32_t h, uint32_t w) {
+  VkImageCreateInfo texInfo;
+  VkBufferImageCopy imageCpy;
+
+  texInfo = {};
+  texInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  texInfo.imageType = VK_IMAGE_TYPE_2D;
+  texInfo.extent.width = width;
+  texInfo.extent.height = height;
+  texInfo.extent.depth = 1;
+  texInfo.mipLevels = 1;
+  texInfo.arrayLayers = 1;
+  texInfo.format = VK_FORMAT_R8G8B8A8_SINT;
+  texInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+  texInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  texInfo.usage =
+    VK_IMAGE_USAGE_STORAGE_BIT;
+  texInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  texInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+  texInfo.flags = 0;
+
+  image = new VkImage();
+  VkResult result = vkCreateImage(externalProgram->device, &texInfo, nullptr, image);
+  errorHandler->ConfirmSuccess(result, "Creating Compute Image");
+
+  VkMemoryRequirements memRequirements;
+  vkGetImageMemoryRequirements(externalProgram->device, *image, &memRequirements);
+
+  VkMemoryAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  allocInfo.allocationSize = memRequirements.size;
+  auto propFlag = static_cast<VkMemoryPropertyFlags>(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+  Utility::ConfirmMemory(&memRequirements, &propFlag, &allocInfo);
+  VkDeviceMemory memory;
+
+  result = vkAllocateMemory(externalProgram->device, &allocInfo, nullptr, &memory);
+  errorHandler->ConfirmSuccess(result, "Allocating Image Memory");
+
+  vkBindImageMemory(externalProgram->device, *image, memory, 0);
+
+  VkImageViewCreateInfo viewInfo{};
+  viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  viewInfo.image = *image;
+  viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  viewInfo.format = VK_FORMAT_R8G8B8A8_SINT;
+  viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  viewInfo.subresourceRange.baseMipLevel = 0;
+  viewInfo.subresourceRange.levelCount = 1;
+  viewInfo.subresourceRange.baseArrayLayer = 0;
+  viewInfo.subresourceRange.layerCount = 1;
+
+  vkCreateImageView(externalProgram->device, &viewInfo, nullptr, &imageView);
+
+}; //CreateImage
+
+void ComputeImage::Reset() {
+  vkDestroyImage(externalProgram->device, *image, nullptr);
+  vkFreeMemory(externalProgram->device, memory, nullptr);
+  CreateImage(width, height);
+}; //ResetComputeImage

@@ -6,13 +6,13 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 proj;
 } ubo; //UBO
 
-layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec3 inColor;
+layout(location = 0) in vec4 inColor;
+layout(location = 1) in vec3 inPosition;
 layout(location = 2) in vec3 inNorm;
 layout(location = 3) in vec2 texPos;
 
-layout(location = 0) flat out vec3 flatFragColor;
-layout(location = 1) smooth out vec3 smoothFragColor;
+layout(location = 0) flat out vec4 flatFragColor;
+layout(location = 1) smooth out vec4 smoothFragColor;
 layout(location = 2) out vec3 fragNorm;
 layout(location = 3) out vec3 fragVert;
 layout(location = 4) out vec2 fragTexPos;

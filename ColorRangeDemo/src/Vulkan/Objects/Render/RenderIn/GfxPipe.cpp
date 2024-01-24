@@ -2,15 +2,14 @@
 
 using namespace RenderIn;
 
-
 GFXPipeline::GFXPipeline(std::shared_ptr<ExternalProgram>* eProgram) {
   externalProgram = *eProgram;
   
-  shaders.resize(2);
-  pipelineShaderInfo.resize(2);
-  shaderModulesInfo.resize(2);
+  gfxVars.shaders.resize(2);
+  gfxVars.pipelineShaderInfo.resize(2);
+  gfxVars.shaderModulesInfo.resize(2);
 
-  dynamicStates = {
+  gfxVars.dynamicStates = {
     VK_DYNAMIC_STATE_VIEWPORT,
     VK_DYNAMIC_STATE_SCISSOR
   }; //Dynamic States
@@ -28,225 +27,395 @@ void GFXPipeline::AddShaderFile(ShaderType shaderType, std::string filestr) {
   file.seekg(0);
   file.read(buffer.data(), fileSize);
 
-  if (shaderType == Vertex) vertBuffer = buffer;
-  if (shaderType == Fragment) fragBuffer = buffer;
+  if (shaderType == Vertex) gfxVars.vertBuffer = buffer;
+  if (shaderType == Fragment) gfxVars.fragBuffer = buffer;
+  if (shaderType == Compute) compVars.buffer = buffer;
 
   file.close();
 }; //AddShaderFile
 
 void GFXPipeline::ClearPipeline() {
-  pushConstantRange.clear();
-  fragInput.clear();
-  vertexInput.clear();
+  compVars.pushConstantRange.clear();
+
+  gfxVars.pushConstantRange.clear();
+  gfxVars.fragInput.clear();
+  gfxVars.vertexInput.clear();
 }; //ClearPipeline
 
 void GFXPipeline::IsStencil(bool stencilTrue) {
-  isStencil = stencilTrue;
+  gfxVars.isStencil = stencilTrue;
 }; //IsStencil
 
 void GFXPipeline::Activate(VkRenderPass renderPass) {
-  shaderModulesInfo[0].sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  shaderModulesInfo[0].codeSize = vertBuffer.size();
-  shaderModulesInfo[0].pCode = reinterpret_cast<const uint32_t*>(vertBuffer.data());
+  gfxVars.shaderModulesInfo[0].sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+  gfxVars.shaderModulesInfo[0].codeSize = gfxVars.vertBuffer.size();
+  gfxVars.shaderModulesInfo[0].pCode = reinterpret_cast<const uint32_t*>(gfxVars.vertBuffer.data());
 
-  shaderModulesInfo[1].sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  shaderModulesInfo[1].codeSize = fragBuffer.size();
-  shaderModulesInfo[1].pCode = reinterpret_cast<const uint32_t*>(fragBuffer.data());
+  gfxVars.shaderModulesInfo[1].sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+  gfxVars.shaderModulesInfo[1].codeSize = gfxVars.fragBuffer.size();
+  gfxVars.shaderModulesInfo[1].pCode = reinterpret_cast<const uint32_t*>(gfxVars.fragBuffer.data());
 
-  ShaderModuleCreation(static_cast<uint32_t>(shaderModulesInfo.size()) - 1);
+  ShaderModuleCreation(static_cast<uint32_t>(gfxVars.shaderModulesInfo.size()) - 1, &gfxVars);
 
   //Vertex Shader Info
-  pipelineShaderInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  pipelineShaderInfo[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-  pipelineShaderInfo[0].module = shaders[0];
-  pipelineShaderInfo[0].pName = "main";
-
+  gfxVars.pipelineShaderInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  gfxVars.pipelineShaderInfo[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+  gfxVars.pipelineShaderInfo[0].module = gfxVars.shaders[0];
+  gfxVars.pipelineShaderInfo[0].pName = "main";
 
   //Fragment Shader
-  pipelineShaderInfo[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  pipelineShaderInfo[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  pipelineShaderInfo[1].module = shaders[1];
-  pipelineShaderInfo[1].pName = "main";
+  gfxVars.pipelineShaderInfo[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  gfxVars.pipelineShaderInfo[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+  gfxVars.pipelineShaderInfo[1].module = gfxVars.shaders[1];
+  gfxVars.pipelineShaderInfo[1].pName = "main";
 
-  vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertexInputInfo.vertexBindingDescriptionCount = 1;
-  vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexInput.size());
-  vertexInputInfo.pVertexBindingDescriptions = fragInput.data();
-  vertexInputInfo.pVertexAttributeDescriptions = vertexInput.data();
-
+  gfxVars.vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  gfxVars.vertexInputInfo.vertexBindingDescriptionCount = gfxVars.fragInput.size();
+  gfxVars.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(gfxVars.vertexInput.size());
+  gfxVars.vertexInputInfo.pVertexBindingDescriptions = gfxVars.fragInput.data();
+  gfxVars.vertexInputInfo.pVertexAttributeDescriptions = gfxVars.vertexInput.data();
 
   //DescriptorSets
-  descLayoutInfo.bindingCount = descSetLayoutBinding.size();
-  descLayoutInfo.pBindings = descSetLayoutBinding.data();
-  descLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  gfxVars.descLayoutInfo.bindingCount = gfxVars.descSetLayoutBinding.size();
+  gfxVars.descLayoutInfo.pBindings = gfxVars.descSetLayoutBinding.data();
+  gfxVars.descLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 
-  result = vkCreateDescriptorSetLayout(externalProgram->device, &descLayoutInfo, nullptr, &descriptorSetLayout);
+  result = vkCreateDescriptorSetLayout(externalProgram->device, &gfxVars.descLayoutInfo, nullptr, &gfxVars.descriptorSetLayout);
   errorHandler->ConfirmSuccess(result, "Creating DescriptorSet Layout");
 
 
   //General Pipeline Information
-  inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-  inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-  inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+  gfxVars.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+  gfxVars.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  gfxVars.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
-  viewportStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-  viewportStateInfo.viewportCount = 1;
-  viewportStateInfo.scissorCount = 1;
+  gfxVars.viewportStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+  gfxVars.viewportStateInfo.viewportCount = 1;
+  gfxVars.viewportStateInfo.scissorCount = 1;
 
-  rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-  rasterizerInfo.depthClampEnable = VK_FALSE;
-  rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
-  rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
-  rasterizerInfo.lineWidth = 1.0f;
-  rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
-  rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-  rasterizerInfo.depthBiasEnable = VK_FALSE;
+  gfxVars.rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+  gfxVars.rasterizerInfo.depthClampEnable = VK_FALSE;
+  gfxVars.rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
+  gfxVars.rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
+  gfxVars.rasterizerInfo.lineWidth = 1.0f;
+  gfxVars.rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
+  gfxVars.rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+  gfxVars.rasterizerInfo.depthBiasEnable = VK_FALSE;
 
-  multisamplingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-  multisamplingInfo.sampleShadingEnable = VK_FALSE;
-  multisamplingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+  gfxVars.multisamplingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+  gfxVars.multisamplingInfo.sampleShadingEnable = VK_FALSE;
+  gfxVars.multisamplingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-  colorBlendAttachInfo.colorWriteMask = 0xf;
-  colorBlendAttachInfo.blendEnable = VK_FALSE;
 
-  colorBlendingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-  colorBlendingInfo.logicOpEnable = VK_FALSE;
-  colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY;
-  colorBlendingInfo.attachmentCount = 1;
-  colorBlendingInfo.pAttachments = &colorBlendAttachInfo;
-  colorBlendingInfo.blendConstants[0] = 0.0f;
-  colorBlendingInfo.blendConstants[1] = 0.0f;
-  colorBlendingInfo.blendConstants[2] = 0.0f;
-  colorBlendingInfo.blendConstants[3] = 0.0f;
 
-  if (isStencil == true) {
-    stencilState.compareOp = VK_COMPARE_OP_NOT_EQUAL;
-    stencilState.failOp = VK_STENCIL_OP_KEEP;
-    stencilState.passOp = VK_STENCIL_OP_REPLACE;
-    stencilState.depthFailOp = VK_STENCIL_OP_KEEP;
-    depthStencilInfo.depthTestEnable = VK_TRUE;
+  gfxVars.colorBlendingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+  gfxVars.colorBlendingInfo.logicOpEnable = VK_FALSE;
+  gfxVars.colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY;
+  gfxVars.colorBlendingInfo.attachmentCount = 1;
+  gfxVars.colorBlendingInfo.pAttachments = &gfxVars.colorBlendAttachInfo;
+  gfxVars.colorBlendingInfo.blendConstants[0] = 0.0f;
+  gfxVars.colorBlendingInfo.blendConstants[1] = 0.0f;
+  gfxVars.colorBlendingInfo.blendConstants[2] = 0.0f;
+  gfxVars.colorBlendingInfo.blendConstants[3] = 0.0f;
+
+  if (gfxVars.isStencil == true) {
+    gfxVars.stencilState.compareOp = VK_COMPARE_OP_NOT_EQUAL;
+    gfxVars.stencilState.failOp = VK_STENCIL_OP_KEEP;
+    gfxVars.stencilState.passOp = VK_STENCIL_OP_REPLACE;
+    gfxVars.stencilState.depthFailOp = VK_STENCIL_OP_KEEP;
+    gfxVars.depthStencilInfo.depthTestEnable = VK_TRUE;
   } //isStencil is true
   else {
-    stencilState.compareOp = VK_COMPARE_OP_ALWAYS;
-    stencilState.failOp = VK_STENCIL_OP_KEEP;
-    stencilState.passOp = VK_STENCIL_OP_REPLACE;
-    stencilState.depthFailOp = VK_STENCIL_OP_KEEP;
-    depthStencilInfo.depthTestEnable = VK_TRUE;
+    gfxVars.stencilState.compareOp = VK_COMPARE_OP_ALWAYS;
+    gfxVars.stencilState.failOp = VK_STENCIL_OP_KEEP;
+    gfxVars.stencilState.passOp = VK_STENCIL_OP_REPLACE;
+    gfxVars.stencilState.depthFailOp = VK_STENCIL_OP_KEEP;
+    gfxVars.depthStencilInfo.depthTestEnable = VK_TRUE;
   }; //Stencil
 
-  stencilState.reference = 1;
-  stencilState.writeMask = 0xff;
-  stencilState.compareMask = 0xff;
+  gfxVars.stencilState.reference = 1;
+  gfxVars.stencilState.writeMask = 0xff;
+  gfxVars.stencilState.compareMask = 0xff;
 
-  depthStencilInfo.front = stencilState;
-  depthStencilInfo.back = stencilState;
-  depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-  depthStencilInfo.depthWriteEnable = VK_TRUE;
-  depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-  depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
-  depthStencilInfo.minDepthBounds = 0.0f;
-  depthStencilInfo.maxDepthBounds = 1.0f;
-  depthStencilInfo.stencilTestEnable = VK_TRUE;
+  gfxVars.depthStencilInfo.front = gfxVars.stencilState;
+  gfxVars.depthStencilInfo.back = gfxVars.stencilState;
+  gfxVars.depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+  gfxVars.depthStencilInfo.depthWriteEnable = VK_TRUE;
+  gfxVars.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+  gfxVars.depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+  gfxVars.depthStencilInfo.minDepthBounds = 0.0f;
+  gfxVars.depthStencilInfo.maxDepthBounds = 1.0f;
+  gfxVars.depthStencilInfo.stencilTestEnable = VK_TRUE;
 
 
-  dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-  dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-  dynamicStateInfo.pDynamicStates = dynamicStates.data();
+  gfxVars.dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+  gfxVars.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(gfxVars.dynamicStates.size());
+  gfxVars.dynamicStateInfo.pDynamicStates = gfxVars.dynamicStates.data();
 
   //Pipeline
-  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.pPushConstantRanges = pushConstantRange.data();
-  pipelineLayoutInfo.pushConstantRangeCount = 1;
-  pipelineLayoutInfo.setLayoutCount = 1;
-  pipelineLayoutInfo.pSetLayouts = { &descriptorSetLayout };
+  gfxVars.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  gfxVars.pipelineLayoutInfo.pPushConstantRanges = gfxVars.pushConstantRange.data();
+  gfxVars.pipelineLayoutInfo.pushConstantRangeCount = gfxVars.pushConstantRange.size();
+  gfxVars.pipelineLayoutInfo.setLayoutCount = 1;
+  gfxVars.pipelineLayoutInfo.pSetLayouts = { &gfxVars.descriptorSetLayout };
 
-  result = vkCreatePipelineLayout(externalProgram->device, &pipelineLayoutInfo, nullptr, &pipelineLayout);
+  result = vkCreatePipelineLayout(externalProgram->device, &gfxVars.pipelineLayoutInfo, nullptr, &gfxVars.pipelineLayout);
   errorHandler->ConfirmSuccess(result, "Creating Graphics Pipeline Layout");
 
 
-  pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-  pipelineInfo.stageCount = 2;
-  pipelineInfo.pStages = pipelineShaderInfo.data();
-  pipelineInfo.pVertexInputState = &vertexInputInfo;
-  pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
-  pipelineInfo.pViewportState = &viewportStateInfo;
-  pipelineInfo.pRasterizationState = &rasterizerInfo;
-  pipelineInfo.pMultisampleState = &multisamplingInfo;
-  pipelineInfo.pColorBlendState = &colorBlendingInfo;
-  pipelineInfo.pDynamicState = &dynamicStateInfo;
-  pipelineInfo.layout = pipelineLayout;
-  pipelineInfo.renderPass = renderPass;
-  pipelineInfo.subpass = 0;
-  pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-  pipelineInfo.pDepthStencilState = &depthStencilInfo;
+  gfxVars.pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+  gfxVars.pipelineInfo.stageCount = 2;
+  gfxVars.pipelineInfo.pStages = gfxVars.pipelineShaderInfo.data();
+  gfxVars.pipelineInfo.pVertexInputState = &gfxVars.vertexInputInfo;
+  gfxVars.pipelineInfo.pInputAssemblyState = &gfxVars.inputAssemblyInfo;
+  gfxVars.pipelineInfo.pViewportState = &gfxVars.viewportStateInfo;
+  gfxVars.pipelineInfo.pRasterizationState = &gfxVars.rasterizerInfo;
+  gfxVars.pipelineInfo.pMultisampleState = &gfxVars.multisamplingInfo;
+  gfxVars.pipelineInfo.pColorBlendState = &gfxVars.colorBlendingInfo;
+  gfxVars.pipelineInfo.pDynamicState = &gfxVars.dynamicStateInfo;
+  gfxVars.pipelineInfo.layout = gfxVars.pipelineLayout;
+  gfxVars.pipelineInfo.renderPass = renderPass;
+  gfxVars.pipelineInfo.subpass = 0;
+  gfxVars.pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+  gfxVars.pipelineInfo.pDepthStencilState = &gfxVars.depthStencilInfo;
 
   result = vkCreateGraphicsPipelines(
     externalProgram->device,
     VK_NULL_HANDLE, 1,
-    &pipelineInfo, nullptr,
-    &graphicsPipeline);
+    &gfxVars.pipelineInfo, nullptr,
+    &gfxVars.graphicsPipeline);
 
   errorHandler->ConfirmSuccess(result, "Creating Graphics Pipeline");
 
-  vkDestroyShaderModule(externalProgram->device, shaders[0], nullptr);
-  vkDestroyShaderModule(externalProgram->device, shaders[1], nullptr);
+
+  if (compVars.descSetLayoutBinding.size() > 0) {
+    //Craft Compute Shader
+    compVars.shaderModuleInfo = {};
+    compVars.shaderModuleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    compVars.shaderModuleInfo.codeSize = compVars.buffer.size();
+    compVars.shaderModuleInfo.pCode = reinterpret_cast<const uint32_t*>(compVars.buffer.data());
+
+    ShaderModuleCreation(&compVars);
+
+    //Compute Shader
+    compVars.pipelineShaderInfo = {};
+    compVars.pipelineShaderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    compVars.pipelineShaderInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    compVars.pipelineShaderInfo.module = compVars.shaderModule;
+    compVars.pipelineShaderInfo.pName = "main";
+
+    compVars.descLayoutInfo.bindingCount = compVars.descSetLayoutBinding.size();
+    compVars.descLayoutInfo.pBindings = compVars.descSetLayoutBinding.data();
+    compVars.descLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+    result = vkCreateDescriptorSetLayout(externalProgram->device, &compVars.descLayoutInfo, nullptr, &compVars.descriptorSetLayout);
+    errorHandler->ConfirmSuccess(result, "Creating DescriptorSet Layout");
+
+    //Compute Pipeline 
+    compVars.pipelineLayoutInfo = {};
+    compVars.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    compVars.pipelineLayoutInfo.pPushConstantRanges = compVars.pushConstantRange.data();
+    compVars.pipelineLayoutInfo.pushConstantRangeCount = compVars.pushConstantRange.size();
+    compVars.pipelineLayoutInfo.setLayoutCount = 1;
+    compVars.pipelineLayoutInfo.pSetLayouts = &compVars.descriptorSetLayout;
+
+    //DescriptorSetLayour is null
+    result = vkCreatePipelineLayout(externalProgram->device, &compVars.pipelineLayoutInfo, nullptr, &compVars.pipelineLayout);
+    errorHandler->ConfirmSuccess(result, "Creating Compute Pipeline Layout");
+
+    compVars.pipelineCreateInfo = {};
+    compVars.pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    compVars.pipelineCreateInfo.layout = compVars.pipelineLayout;
+    compVars.pipelineCreateInfo.stage = compVars.pipelineShaderInfo;
+
+    result = vkCreateComputePipelines(externalProgram->device, VK_NULL_HANDLE, 1, &compVars.pipelineCreateInfo, nullptr, &compVars.pipeline);
+    errorHandler->ConfirmSuccess(result, "Creating Compute Pipeline");
+    
+    vkDestroyShaderModule(externalProgram->device, compVars.shaderModule, nullptr);
+  }; //compVars.descSetLayoutBinding.size()
+
+
+  for (auto& shader : gfxVars.shaders) {
+    vkDestroyShaderModule(externalProgram->device, shader, nullptr);
+  }; //shaders
 }; //Activate
 
-void GFXPipeline::ShaderModuleCreation(int_fast8_t indice) {
-  result = vkCreateShaderModule(externalProgram->device, &shaderModulesInfo[indice], nullptr, &shaders[indice]);
-  errorHandler->ConfirmSuccess(result, "Creating Shader: " + indice);
-  if (indice > 0) return ShaderModuleCreation(indice - 1);
+void GFXPipeline::ShaderModuleCreation(int_fast8_t indice, GFXVars* gVars) {
+  result = vkCreateShaderModule(externalProgram->device, &gVars->shaderModulesInfo[indice], nullptr, &gVars->shaders[indice]);
+  errorHandler->ConfirmSuccess(result, "Creating Graphics Pipeline Shader: " + indice);
+  if (indice > 0) return ShaderModuleCreation(indice - 1, gVars);
 }; //ShaderModuleCreation
 
-void GFXPipeline::AddShaderBinding(ShaderType shaderType, uint32_t offsetorstride) {
-  switch (shaderType) {
-  case Vertex:
+void GFXPipeline::ShaderModuleCreation(ComputeVars* gVars) {
+  result = vkCreateShaderModule(externalProgram->device, &gVars->shaderModuleInfo, nullptr, &gVars->shaderModule);
+  errorHandler->ConfirmSuccess(result, "Creating Compute Shader");
+}; //ShaderModuleCreation
 
-    VkVertexInputAttributeDescription vertexBindings;
-    vertexBindings.binding = 0;
-    vertexBindings.location = static_cast<uint32_t>(vertexInput.size());
-    vertexBindings.format = VK_FORMAT_R32G32B32_SFLOAT;
-    vertexBindings.offset = offsetorstride;
-    vertexInput.emplace_back(vertexBindings);
-    return;
-  case Fragment:
-    VkVertexInputBindingDescription fragmentBinding;
-    fragmentBinding.binding = 0;
-    fragmentBinding.stride = offsetorstride;
-    fragmentBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    fragInput.emplace_back(fragmentBinding);
-    return;
-  }; //ShaderType Switch
-}
+inline void GFXPipeline::AddShaderBinding(uint32_t offsetorstride) {
+  VkVertexInputAttributeDescription vertexBindings;
+  vertexBindings.binding = 0;
+  vertexBindings.location = static_cast<uint32_t>(gfxVars.vertexInput.size());
+  vertexBindings.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+  vertexBindings.offset = offsetorstride;
+  gfxVars.vertexInput.emplace_back(vertexBindings);
+}; //AddShaderBinding
 
-void GFXPipeline::AddUniformBuffer(ShaderType shader) {
+inline void GFXPipeline::AddBindingDesc(uint32_t offsetorstride, VkVertexInputRate rate = VK_VERTEX_INPUT_RATE_VERTEX) {
+  VkVertexInputBindingDescription inputBinding;
+  inputBinding.binding = 0;
+  inputBinding.stride = offsetorstride;
+  inputBinding.inputRate = rate;
+  gfxVars.fragInput.emplace_back(inputBinding);
+}; //AddBindingDesc
+
+void GFXPipeline::AddUniformBuffer(ShaderType* locations, int_fast8_t shadCount, uint32_t binding) {
   VkDescriptorSetLayoutBinding uboLayoutBinding{};
-  uboLayoutBinding.binding = descSetLayoutBinding.size();
   uboLayoutBinding.descriptorCount = 1;
-  if (shader == Fragment) uboLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-  if (shader == Vertex) uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
   uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  descSetLayoutBinding.push_back(uboLayoutBinding);
+  uboLayoutBinding.binding = binding;
+  
+  uint_fast8_t pipeMark = 0;
+  for (uint_fast8_t i = 0; i <= shadCount;++i) {
+    if (locations[i] == Fragment) {
+      uboLayoutBinding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+      if (pipeMark > 0) pipeMark++;
+    }; //if Fragment
+    if (locations[i] == Vertex) {
+      uboLayoutBinding.stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
+      if (pipeMark > 0) pipeMark++;
+    }; //if Vertex
+    if (locations[i] == Compute)
+    {
+      uboLayoutBinding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+      pipeMark++;
+    }; //if Compute
+  }; //forloop
+  if (pipeMark == 0) { gfxVars.descSetLayoutBinding.push_back(uboLayoutBinding);  }
+  if (pipeMark == 1) { compVars.descSetLayoutBinding.push_back(uboLayoutBinding); }
+  if (pipeMark > 1) { gfxVars.descSetLayoutBinding.push_back(uboLayoutBinding); 
+  compVars.descSetLayoutBinding.push_back(uboLayoutBinding); };
+
 }; //AddUniformBuffer
 
-void GFXPipeline::AddImageSampler(ShaderType shader) {
+void GFXPipeline::AddImageSampler(ShaderType* locations, int_fast8_t shadCount, uint32_t binding) {
   VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-  samplerLayoutBinding.binding = descSetLayoutBinding.size();
+  samplerLayoutBinding.binding = binding;
   samplerLayoutBinding.descriptorCount = 1;
   samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
   samplerLayoutBinding.pImmutableSamplers = nullptr;
-  if (shader == Fragment) samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-  if (shader == Vertex) samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-  descSetLayoutBinding.push_back(samplerLayoutBinding);
+  uint_fast8_t pipeMark = 0;
+  for (uint_fast8_t i = 0; i <= shadCount; ++i) {
+    if (locations[i] == Fragment) {
+      samplerLayoutBinding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+      if (pipeMark > 0) pipeMark++;
+    }; //if Fragment
+    if (locations[i] == Vertex) {
+      samplerLayoutBinding.stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
+      if (pipeMark > 0) pipeMark++;
+    }; //if Vertex
+    if (locations[i] == Compute) {
+      samplerLayoutBinding.stageFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
+      pipeMark++;
+    }; //if Compute
+  }; //forloop
+  if (pipeMark == 0) { gfxVars.descSetLayoutBinding.push_back(samplerLayoutBinding); }
+  if (pipeMark == 1) { compVars.descSetLayoutBinding.push_back(samplerLayoutBinding); }
+  if (pipeMark > 1) {
+    gfxVars.descSetLayoutBinding.push_back(samplerLayoutBinding);
+    compVars.descSetLayoutBinding.push_back(samplerLayoutBinding);
+  };
 }; //AddImageSampler
 
-void GFXPipeline::AddPushConst(ShaderType pushConstLocation) {
+void GFXPipeline::AddStorageImage(ShaderType locations[], int_fast8_t shadCount, uint32_t binding) {
+  VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+  samplerLayoutBinding.binding = binding;
+  samplerLayoutBinding.descriptorCount = 1;
+  samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+
+  uint_fast8_t pipeMark = 0;
+  for (uint_fast8_t i = 0; i < shadCount; i++) {
+    if (locations[i] == Fragment) {
+      samplerLayoutBinding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+      if (pipeMark > 0) pipeMark++;
+    }; //if Fragment
+    if (locations[i] == Vertex) {
+      samplerLayoutBinding.stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
+      if (pipeMark > 0) pipeMark++;
+    }; //if Vertex
+    if (locations[i] == Compute) {
+      samplerLayoutBinding.stageFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
+      pipeMark++;
+    }; //if Compute
+  }; //forloop
+  if (pipeMark == 0) { gfxVars.descSetLayoutBinding.push_back(samplerLayoutBinding); }
+  if (pipeMark == 1) { compVars.descSetLayoutBinding.push_back(samplerLayoutBinding); }
+  if (pipeMark > 1) {
+    gfxVars.descSetLayoutBinding.push_back(samplerLayoutBinding);
+    compVars.descSetLayoutBinding.push_back(samplerLayoutBinding);
+  };
+}; //AddImageSampler
+
+void GFXPipeline::AddPushConst(ShaderType* locations, int_fast8_t shadCount) {
   VkPushConstantRange pushConst;
   pushConst.offset = 0;
   pushConst.size = sizeof(PushConst);
+  pushConst.stageFlags = 0;
 
-  if (pushConstLocation == ShaderType::Fragment) pushConst.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-  if (pushConstLocation == ShaderType::Vertex) pushConst.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-  pushConstantRange.emplace_back(pushConst);
+  uint_fast8_t pipeMark = 0;
+  for (uint_fast8_t i = 0; i <= shadCount; ++i) {
+    if (locations[i] == Fragment) {
+      pushConst.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+      if (pipeMark > 0) pipeMark++;
+    }; //if Fragment
+    if (locations[i] == Vertex) {
+      pushConst.stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
+      if (pipeMark > 0) pipeMark++;
+    }; //if Vertex
+    if (locations[i] == Compute)
+    {
+      pushConst.stageFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
+      pipeMark++;
+    }; //if Compute
+  }; //forloop
+  if (pipeMark == 0) { gfxVars.pushConstantRange.emplace_back(pushConst);}
+  if (pipeMark == 1) { compVars.pushConstantRange.emplace_back(pushConst);}
+  if (pipeMark > 1) {
+    gfxVars.pushConstantRange.emplace_back(pushConst);
+    compVars.pushConstantRange.emplace_back(pushConst);
+  };// range
 }; //PushConst
+
+void GFXPipeline::SetBlendingAttachment(BlenderType type = None) {
+  switch (type) {
+  default:
+  None: {
+    gfxVars.colorBlendAttachInfo.colorWriteMask =
+      VK_COLOR_COMPONENT_R_BIT | 
+      VK_COLOR_COMPONENT_G_BIT | 
+      VK_COLOR_COMPONENT_B_BIT | 
+      VK_COLOR_COMPONENT_A_BIT;
+    gfxVars.colorBlendAttachInfo.blendEnable = VK_FALSE;
+    gfxVars.colorBlendAttachInfo.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    gfxVars.colorBlendAttachInfo.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+    gfxVars.colorBlendAttachInfo.colorBlendOp = VK_BLEND_OP_ADD;
+    gfxVars.colorBlendAttachInfo.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    gfxVars.colorBlendAttachInfo.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    gfxVars.colorBlendAttachInfo.alphaBlendOp = VK_BLEND_OP_ADD;
+  } return; //None
+  Partial: {
+    gfxVars.colorBlendAttachInfo.colorWriteMask =
+      VK_COLOR_COMPONENT_R_BIT |
+      VK_COLOR_COMPONENT_G_BIT |
+      VK_COLOR_COMPONENT_B_BIT |
+      VK_COLOR_COMPONENT_A_BIT;
+    gfxVars.colorBlendAttachInfo.blendEnable = VK_TRUE;
+    gfxVars.colorBlendAttachInfo.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+    gfxVars.colorBlendAttachInfo.dstColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+    gfxVars.colorBlendAttachInfo.colorBlendOp = VK_BLEND_OP_ADD;
+    gfxVars.colorBlendAttachInfo.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    gfxVars.colorBlendAttachInfo.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    gfxVars.colorBlendAttachInfo.alphaBlendOp = VK_BLEND_OP_ADD;
+  } return;
+
+  }; //switch
+}; //BlenderType

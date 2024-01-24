@@ -31,9 +31,9 @@ namespace Polyhedra {
       vertices[1].pos = { 0.5f, 0.5f, 0.0f };
       vertices[2].pos = { -0.5f, 0.5f, 0.0f };
 
-      vertices[0].color = { 1.0f, 0.0f, 0.0f };
-      vertices[1].color = { 0.0f, 1.0f, 0.0f };
-      vertices[2].color = { 0.0f, 0.0f, 1.0f };
+      vertices[0].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+      vertices[1].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+      vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
 
       vertices[0].texPos = { 1.0f, 0.0f};
       vertices[1].texPos = { 0.0f, 1.0f};
@@ -57,10 +57,10 @@ namespace Polyhedra {
       vertices[2].pos = { 0.5f, 0.5f, 0.0f };
       vertices[3].pos = { -0.5f, 0.5f, 0.0f };
 
-      vertices[0].color = { 1.0f, 0.0f, 0.0f };
-      vertices[1].color = { 0.0f, 1.0f, 0.0f };
-      vertices[2].color = { 0.0f, 0.0f, 1.0f };
-      vertices[3].color = { 1.0f, 1.0f, 1.0f };
+      vertices[0].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+      vertices[1].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+      vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+      vertices[3].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
       vertices[0].texPos = { 0.0,1.0 };
       vertices[1].texPos = { 1.0,1.0 };
@@ -90,13 +90,13 @@ namespace Polyhedra {
       vertices[5].pos = { 0.25f, -0.43f, 0.0f };
       vertices[6].pos = { 0.0f, 0.0f, 0.0f };
 
-      vertices[0].color = { 0.0f, 1.0f, 0.0f };
-      vertices[1].color = { 0.0f, 1.0f, 1.0f };
-      vertices[2].color = { 0.0f, 0.0f, 1.0f };
-      vertices[3].color = { 1.0f, 0.0f, 1.0f };
-      vertices[4].color = { 1.0f, 0.0f, 0.0f };
-      vertices[5].color = { 1.0f, 1.0f, 0.0f };
-      vertices[6].color = { 1.0f, 1.0f, 1.0f };
+      vertices[0].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+      vertices[1].color = { 0.0f, 1.0f, 1.0f , 1.0f };
+      vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+      vertices[3].color = { 1.0f, 0.0f, 1.0f , 1.0f };
+      vertices[4].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+      vertices[5].color = { 1.0f, 1.0f, 0.0f , 1.0f };
+      vertices[6].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
       vertices[0].texPos = { 0.0,1.0 };
       vertices[1].texPos = { 1.0,1.0 };
@@ -132,10 +132,10 @@ namespace Polyhedra {
       vertices[3].pos = { 0.0f, -0.5f, 0.3535 };
       vertices[2].pos = { 0.0f, 0.5f, 0.3535 };
 
-      vertices[0].color = { 1.0f, 0.0f, 0.0f };
-      vertices[1].color = { 0.0f, 1.0f, 0.0f };
-      vertices[2].color = { 0.0f, 0.0f, 1.0f };
-      vertices[3].color = { 1.0f, 1.0f, 1.0f };
+      vertices[0].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+      vertices[1].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+      vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+      vertices[3].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
 
       indices = {
@@ -165,14 +165,14 @@ namespace Polyhedra {
       vertices[6].pos = { -1.154701, 0, - 0.4082483f };
       vertices[7].pos = { 0, 0, - 1.224745f };
 
-      vertices[0].color = { 0.0f, 0.0f, 0.0f };
-      vertices[1].color = { 1.0f, 0.0f, 0.0f };
-      vertices[2].color = { 0.0f, 1.0f, 0.0f };
-      vertices[3].color = { 0.0f, 0.0f, 1.0f };
-      vertices[4].color = { 1.0f, 1.0f, 1.0f };
-      vertices[5].color = { 0.0f, 0.5f, 0.5f };
-      vertices[6].color = { 0.5f, 0.0f, 0.5f };
-      vertices[7].color = { 0.5f, 0.5f, 0.0f };
+      vertices[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+      vertices[1].color = { 1.0f, 0.0f, 0.0f,1.0f };
+      vertices[2].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+      vertices[3].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+      vertices[4].color = { 1.0f, 1.0f, 1.0f , 1.0f };
+      vertices[5].color = { 0.0f, 0.5f, 0.5f , 1.0f };
+      vertices[6].color = { 0.5f, 0.0f, 0.5f , 1.0f };
+      vertices[7].color = { 0.5f, 0.5f, 0.0f , 1.0f };
 
       vertices[0].texPos = { 0.0,1.0 };
       vertices[1].texPos = { 1.0,1.0 };
@@ -222,12 +222,12 @@ namespace Polyhedra {
       vertices[4].pos = { 0, - 1.414214, 0 };
       vertices[5].pos = { 0, 0, - 1.414214 };
       
-      vertices[0].color = { 0.0f, 0.0f, 0.0f };
-      vertices[1].color = { 1.0f, 0.0f, 0.0f };
-      vertices[2].color = { 0.0f, 1.0f, 0.0f };
-      vertices[3].color = { 0.0f, 0.0f, 1.0f };
-      vertices[4].color = { 1.0f, 1.0f, 1.0f };
-      vertices[5].color = { 0.5f, 0.5f, 0.5f };
+      vertices[0].color = { 0.0f, 0.0f, 0.0f , 1.0f };
+      vertices[1].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+      vertices[2].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+      vertices[3].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+      vertices[4].color = { 1.0f, 1.0f, 1.0f , 1.0f };
+      vertices[5].color = { 0.5f, 0.5f, 0.5f , 1.0f };
 
 
       indices = {
@@ -268,20 +268,20 @@ namespace Polyhedra {
       vertices[11].pos = { 0, 0, -1.175571 };
 
 
-      vertices[0].color = { 0.0f, 1.0f, 0.0f };
-      vertices[1].color = { 0.0f, 1.0f, 1.0f };
-      vertices[2].color = { 0.0f, 0.0f, 1.0f };
-      vertices[3].color = { 1.0f, 0.0f, 1.0f };
-      vertices[4].color = { 1.0f, 0.0f, 0.0f };
-      vertices[5].color = { 1.0f, 1.0f, 0.0f };
-      vertices[6].color = { 1.0f, 1.0f, 1.0f };
+      vertices[0].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+      vertices[1].color = { 0.0f, 1.0f, 1.0f , 1.0f };
+      vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+      vertices[3].color = { 1.0f, 0.0f, 1.0f , 1.0f };
+      vertices[4].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+      vertices[5].color = { 1.0f, 1.0f, 0.0f , 1.0f };
+      vertices[6].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
-      vertices[7].color = { 0.0f, 0.0f, 0.0f };
+      vertices[7].color = { 0.0f, 0.0f, 0.0f , 1.0f };
 
-      vertices[8].color = { 0.0f, 0.5f, 0.0f };
-      vertices[9].color = { 0.0f, 0.5f, 0.5f };
-      vertices[10].color = { 0.0f, 0.0f, 0.5f };
-      vertices[11].color = { 0.5f, 0.0f, 0.5f };
+      vertices[8].color = { 0.0f, 0.5f, 0.0f , 1.0f };
+      vertices[9].color = { 0.0f, 0.5f, 0.5f , 1.0f };
+      vertices[10].color = { 0.0f, 0.0f, 0.5f , 1.0f };
+      vertices[11].color = { 0.5f, 0.0f, 0.5f , 1.0f };
 
 
       indices = {
@@ -342,29 +342,29 @@ namespace Polyhedra {
       vertices[19].pos = { 0, 0, - 1.070466 };
 
 
-      vertices[0].color = { 0.0f, 1.0f, 0.0f };
-      vertices[1].color = { 0.0f, 1.0f, 1.0f };
-      vertices[2].color = { 0.0f, 0.0f, 1.0f };
-      vertices[3].color = { 1.0f, 0.0f, 1.0f };
-      vertices[4].color = { 1.0f, 0.0f, 0.0f };
-      vertices[5].color = { 1.0f, 1.0f, 0.0f };
-      vertices[6].color = { 1.0f, 1.0f, 1.0f };
+      vertices[0].color = { 0.0f, 1.0f, 0.0f, 1.0f };
+      vertices[1].color = { 0.0f, 1.0f, 1.0f , 1.0f };
+      vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+      vertices[3].color = { 1.0f, 0.0f, 1.0f , 1.0f };
+      vertices[4].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+      vertices[5].color = { 1.0f, 1.0f, 0.0f , 1.0f };
+      vertices[6].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
-      vertices[7].color = { 0.0f, 0.0f, 0.0f };
+      vertices[7].color = { 0.0f, 0.0f, 0.0f , 1.0f };
 
-      vertices[8].color = { 0.0f, 0.5f, 0.0f };
-      vertices[9].color = { 0.0f, 0.5f, 0.5f };
-      vertices[10].color = { 0.0f, 0.0f, 0.5f };
-      vertices[11].color = { 0.5f, 0.0f, 0.5f };
-      vertices[12].color = { 0.5f, 0.0f, 0.0f };
-      vertices[13].color = { 0.5f, 0.5f, 0.0f };
-      vertices[14].color = { 0.5f, 0.5f, 0.5f };
+      vertices[8].color = { 0.0f, 0.5f, 0.0f , 1.0f };
+      vertices[9].color = { 0.0f, 0.5f, 0.5f , 1.0f };
+      vertices[10].color = { 0.0f, 0.0f, 0.5f , 1.0f };
+      vertices[11].color = { 0.5f, 0.0f, 0.5f , 1.0f };
+      vertices[12].color = { 0.5f, 0.0f, 0.0f , 1.0f };
+      vertices[13].color = { 0.5f, 0.5f, 0.0f , 1.0f };
+      vertices[14].color = { 0.5f, 0.5f, 0.5f , 1.0f };
 
-      vertices[15].color = { 0.0f, 0.25f, 0.0f };
-      vertices[16].color = { 0.0f, 0.25f, 0.25f };
-      vertices[17].color = { 0.0f, 0.0f, 0.25f };
-      vertices[18].color = { 0.25f, 0.0f, 0.25f };
-      vertices[19].color = { 0.25f, 0.0f, 0.0f };
+      vertices[15].color = { 0.0f, 0.25f, 0.0f , 1.0f };
+      vertices[16].color = { 0.0f, 0.25f, 0.25f , 1.0f };
+      vertices[17].color = { 0.0f, 0.0f, 0.25f , 1.0f };
+      vertices[18].color = { 0.25f, 0.0f, 0.25f , 1.0f };
+      vertices[19].color = { 0.25f, 0.0f, 0.0f , 1.0f };
 
       indices = {
         0,1,4, //7,2
@@ -444,20 +444,20 @@ namespace Polyhedra {
         vertices[10].pos = { -0.3333333, - 0.942809, - 0.5773503 };
         vertices[11].pos = { 0, 0, - 1.154701 };
 
-        vertices[0].color = { 0.0f, 1.0f, 0.0f };
-        vertices[1].color = { 0.0f, 1.0f, 1.0f };
-        vertices[2].color = { 0.0f, 0.0f, 1.0f };
-        vertices[3].color = { 1.0f, 0.0f, 1.0f };
-        vertices[4].color = { 1.0f, 0.0f, 0.0f };
-        vertices[5].color = { 1.0f, 1.0f, 0.0f };
-        vertices[6].color = { 1.0f, 1.0f, 1.0f };
+        vertices[0].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+        vertices[1].color = { 0.0f, 1.0f, 1.0f , 1.0f };
+        vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+        vertices[3].color = { 1.0f, 0.0f, 1.0f , 1.0f };
+        vertices[4].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+        vertices[5].color = { 1.0f, 1.0f, 0.0f , 1.0f };
+        vertices[6].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
-        vertices[7].color = { 0.0f, 0.0f, 0.0f };
+        vertices[7].color = { 0.0f, 0.0f, 0.0f , 1.0f };
 
-        vertices[8].color = { 0.0f, 0.5f, 0.0f };
-        vertices[9].color = { 0.0f, 0.5f, 0.5f };
-        vertices[10].color = { 0.0f, 0.0f, 0.5f };
-        vertices[11].color = { 0.5f, 0.0f, 0.5f };
+        vertices[8].color = { 0.0f, 0.5f, 0.0f , 1.0f };
+        vertices[9].color = { 0.0f, 0.5f, 0.5f , 1.0f };
+        vertices[10].color = { 0.0f, 0.0f, 0.5f , 1.0f };
+        vertices[11].color = { 0.5f, 0.0f, 0.5f , 1.0f };
 
         indices = {
             //Triangles
@@ -535,39 +535,39 @@ namespace Polyhedra {
           vertices[29].pos = {0, 0, - 1.051462};
 
 
-          vertices[0].color = { 0.0f, 1.0f, 0.0f };
-          vertices[1].color = { 0.0f, 1.0f, 1.0f };
-          vertices[2].color = { 0.0f, 0.0f, 1.0f };
-          vertices[3].color = { 1.0f, 0.0f, 1.0f };
-          vertices[4].color = { 1.0f, 0.0f, 0.0f };
-          vertices[5].color = { 1.0f, 1.0f, 0.0f };
-          vertices[6].color = { 1.0f, 1.0f, 1.0f };
+          vertices[0].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+          vertices[1].color = { 0.0f, 1.0f, 1.0f , 1.0f };
+          vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+          vertices[3].color = { 1.0f, 0.0f, 1.0f , 1.0f };
+          vertices[4].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+          vertices[5].color = { 1.0f, 1.0f, 0.0f , 1.0f };
+          vertices[6].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
-          vertices[7].color = { 0.0f, 0.0f, 0.0f };
+          vertices[7].color = { 0.0f, 0.0f, 0.0f , 1.0f };
 
-          vertices[8].color = { 0.0f, 0.5f, 0.0f };
-          vertices[9].color = { 0.0f, 0.5f, 0.5f };
-          vertices[10].color = { 0.0f, 0.0f, 0.5f };
-          vertices[11].color = { 0.5f, 0.0f, 0.5f };
-          vertices[12].color = { 0.5f, 0.0f, 0.5f };
-          vertices[13].color = { 0.5f, 0.5f, 0.0f };
-          vertices[14].color = { 0.5f, 0.5f, 0.5f };
+          vertices[8].color = { 0.0f, 0.5f, 0.0f , 1.0f };
+          vertices[9].color = { 0.0f, 0.5f, 0.5f , 1.0f };
+          vertices[10].color = { 0.0f, 0.0f, 0.5f , 1.0f };
+          vertices[11].color = { 0.5f, 0.0f, 0.5f , 1.0f };
+          vertices[12].color = { 0.5f, 0.0f, 0.5f , 1.0f };
+          vertices[13].color = { 0.5f, 0.5f, 0.0f , 1.0f };
+          vertices[14].color = { 0.5f, 0.5f, 0.5f , 1.0f };
 
-          vertices[15].color = { 0.0f, 0.25f, 0.0f };
-          vertices[16].color = { 0.0f, 0.25f, 0.25f };
-          vertices[17].color = { 0.0f, 0.0f, 0.25f };
-          vertices[18].color = { 0.25f, 0.0f, 0.25f };
-          vertices[19].color = { 0.25f, 0.0f, 0.25f };
-          vertices[20].color = { 0.25f, 0.25f, 0.0f };
-          vertices[21].color = { 0.25f, 0.25f, 0.25f };
+          vertices[15].color = { 0.0f, 0.25f, 0.0f , 1.0f };
+          vertices[16].color = { 0.0f, 0.25f, 0.25f , 1.0f };
+          vertices[17].color = { 0.0f, 0.0f, 0.25f , 1.0f };
+          vertices[18].color = { 0.25f, 0.0f, 0.25f , 1.0f };
+          vertices[19].color = { 0.25f, 0.0f, 0.25f , 1.0f };
+          vertices[20].color = { 0.25f, 0.25f, 0.0f , 1.0f };
+          vertices[21].color = { 0.25f, 0.25f, 0.25f , 1.0f };
 
-          vertices[22].color = { 0.0f, 0.75f, 0.0f };
-          vertices[23].color = { 0.0f, 0.75f, 0.75f };
-          vertices[24].color = { 0.0f, 0.0f, 0.75f };
-          vertices[25].color = { 0.75f, 0.0f, 0.75f };
-          vertices[26].color = { 0.75f, 0.0f, 0.75f };
-          vertices[28].color = { 0.75f, 0.75f, 0.0f };
-          vertices[29].color = { 0.75f, 0.75f, 0.75f };
+          vertices[22].color = { 0.0f, 0.75f, 0.0f , 1.0f };
+          vertices[23].color = { 0.0f, 0.75f, 0.75f , 1.0f };
+          vertices[24].color = { 0.0f, 0.0f, 0.75f , 1.0f };
+          vertices[25].color = { 0.75f, 0.0f, 0.75f , 1.0f };
+          vertices[26].color = { 0.75f, 0.0f, 0.75f , 1.0f };
+          vertices[28].color = { 0.75f, 0.75f, 0.0f , 1.0f };
+          vertices[29].color = { 0.75f, 0.75f, 0.75f , 1.0f };
 
           indices = {
             //Triangles
@@ -668,20 +668,20 @@ namespace Polyhedra {
         vertices[10].pos = {-0.758047, - 0.6285394, - 0.5025189};
         vertices[11].pos = {0.09475587, - 0.6285394, - 0.904534};
 
-        vertices[0].color = { 0.0f, 1.0f, 0.0f };
-        vertices[1].color = { 0.0f, 1.0f, 1.0f };
-        vertices[2].color = { 0.0f, 0.0f, 1.0f };
-        vertices[3].color = { 1.0f, 0.0f, 1.0f };
-        vertices[4].color = { 1.0f, 0.0f, 0.0f };
-        vertices[5].color = { 1.0f, 1.0f, 0.0f };
-        vertices[6].color = { 1.0f, 1.0f, 1.0f };
+        vertices[0].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+        vertices[1].color = { 0.0f, 1.0f, 1.0f , 1.0f };
+        vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+        vertices[3].color = { 1.0f, 0.0f, 1.0f , 1.0f };
+        vertices[4].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+        vertices[5].color = { 1.0f, 1.0f, 0.0f , 1.0f };
+        vertices[6].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
-        vertices[7].color = { 0.0f, 0.0f, 0.0f };
+        vertices[7].color = { 0.0f, 0.0f, 0.0f , 1.0f };
 
-        vertices[8].color = { 0.0f, 0.5f, 0.0f };
-        vertices[9].color = { 0.0f, 0.5f, 0.5f };
-        vertices[10].color = { 0.0f, 0.0f, 0.5f };
-        vertices[11].color = { 0.5f, 0.0f, 0.5f };
+        vertices[8].color = { 0.0f, 0.5f, 0.0f , 1.0f };
+        vertices[9].color = { 0.0f, 0.5f, 0.5f , 1.0f };
+        vertices[10].color = { 0.0f, 0.0f, 0.5f , 1.0f };
+        vertices[11].color = { 0.5f, 0.0f, 0.5f , 1.0f };
 
         indices = {
           //Triangles
@@ -750,34 +750,34 @@ namespace Polyhedra {
         vertices[23].pos = {0, 0, - 1.042011};
 
 
-        vertices[0].color = { 0.0f, 1.0f, 0.0f };
-        vertices[1].color = { 0.0f, 1.0f, 1.0f };
-        vertices[2].color = { 0.0f, 0.0f, 1.0f };
-        vertices[3].color = { 1.0f, 0.0f, 1.0f };
-        vertices[4].color = { 1.0f, 0.0f, 0.0f };
-        vertices[5].color = { 1.0f, 1.0f, 0.0f };
-        vertices[6].color = { 1.0f, 1.0f, 1.0f };
+        vertices[0].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+        vertices[1].color = { 0.0f, 1.0f, 1.0f , 1.0f };
+        vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+        vertices[3].color = { 1.0f, 0.0f, 1.0f , 1.0f };
+        vertices[4].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+        vertices[5].color = { 1.0f, 1.0f, 0.0f , 1.0f };
+        vertices[6].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
-        vertices[7].color = { 0.0f, 0.0f, 0.0f };
+        vertices[7].color = { 0.0f, 0.0f, 0.0f , 1.0f };
 
-        vertices[8].color = { 0.0f, 0.5f, 0.0f };
-        vertices[9].color = { 0.0f, 0.5f, 0.5f };
-        vertices[10].color = { 0.0f, 0.0f, 0.5f };
-        vertices[11].color = { 0.5f, 0.0f, 0.5f };
-        vertices[12].color = { 0.5f, 0.0f, 0.5f };
-        vertices[13].color = { 0.5f, 0.5f, 0.0f };
-        vertices[14].color = { 0.5f, 0.5f, 0.5f };
+        vertices[8].color = { 0.0f, 0.5f, 0.0f , 1.0f };
+        vertices[9].color = { 0.0f, 0.5f, 0.5f , 1.0f };
+        vertices[10].color = { 0.0f, 0.0f, 0.5f , 1.0f };
+        vertices[11].color = { 0.5f, 0.0f, 0.5f , 1.0f };
+        vertices[12].color = { 0.5f, 0.0f, 0.5f , 1.0f };
+        vertices[13].color = { 0.5f, 0.5f, 0.0f , 1.0f };
+        vertices[14].color = { 0.5f, 0.5f, 0.5f , 1.0f };
 
-        vertices[15].color = { 0.0f, 0.25f, 0.0f };
-        vertices[16].color = { 0.0f, 0.25f, 0.25f };
-        vertices[17].color = { 0.0f, 0.0f, 0.25f };
-        vertices[18].color = { 0.25f, 0.0f, 0.25f };
-        vertices[19].color = { 0.25f, 0.0f, 0.25f };
-        vertices[20].color = { 0.25f, 0.25f, 0.0f };
-        vertices[21].color = { 0.25f, 0.25f, 0.25f };
+        vertices[15].color = { 0.0f, 0.25f, 0.0f , 1.0f };
+        vertices[16].color = { 0.0f, 0.25f, 0.25f , 1.0f };
+        vertices[17].color = { 0.0f, 0.0f, 0.25f , 1.0f };
+        vertices[18].color = { 0.25f, 0.0f, 0.25f , 1.0f };
+        vertices[19].color = { 0.25f, 0.0f, 0.25f , 1.0f };
+        vertices[20].color = { 0.25f, 0.25f, 0.0f , 1.0f };
+        vertices[21].color = { 0.25f, 0.25f, 0.25f , 1.0f };
 
-        vertices[22].color = { 0.0f, 0.75f, 0.0f };
-        vertices[23].color = { 0.0f, 0.75f, 0.75f };
+        vertices[22].color = { 0.0f, 0.75f, 0.0f , 1.0f };
+        vertices[23].color = { 0.0f, 0.75f, 0.75f , 1.0f };
 
 
         indices = {
@@ -834,34 +834,34 @@ namespace Polyhedra {
         vertices[23].pos = {0, 0, - 1.054093};
 
 
-        vertices[0].color = { 0.0f, 1.0f, 0.0f };
-        vertices[1].color = { 0.0f, 1.0f, 1.0f };
-        vertices[2].color = { 0.0f, 0.0f, 1.0f };
-        vertices[3].color = { 1.0f, 0.0f, 1.0f };
-        vertices[4].color = { 1.0f, 0.0f, 0.0f };
-        vertices[5].color = { 1.0f, 1.0f, 0.0f };
-        vertices[6].color = { 1.0f, 1.0f, 1.0f };
+        vertices[0].color = { 0.0f, 1.0f, 0.0f , 1.0f };
+        vertices[1].color = { 0.0f, 1.0f, 1.0f , 1.0f };
+        vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+        vertices[3].color = { 1.0f, 0.0f, 1.0f , 1.0f };
+        vertices[4].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+        vertices[5].color = { 1.0f, 1.0f, 0.0f , 1.0f };
+        vertices[6].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
-        vertices[7].color = { 0.0f, 0.0f, 0.0f };
+        vertices[7].color = { 0.0f, 0.0f, 0.0f , 1.0f };
 
-        vertices[8].color = { 0.0f, 0.5f, 0.0f };
-        vertices[9].color = { 0.0f, 0.5f, 0.5f };
-        vertices[10].color = { 0.0f, 0.0f, 0.5f };
-        vertices[11].color = { 0.5f, 0.0f, 0.5f };
-        vertices[12].color = { 0.5f, 0.0f, 0.5f };
-        vertices[13].color = { 0.5f, 0.5f, 0.0f };
-        vertices[14].color = { 0.5f, 0.5f, 0.5f };
+        vertices[8].color = { 0.0f, 0.5f, 0.0f , 1.0f };
+        vertices[9].color = { 0.0f, 0.5f, 0.5f , 1.0f };
+        vertices[10].color = { 0.0f, 0.0f, 0.5f , 1.0f };
+        vertices[11].color = { 0.5f, 0.0f, 0.5f , 1.0f };
+        vertices[12].color = { 0.5f, 0.0f, 0.5f , 1.0f };
+        vertices[13].color = { 0.5f, 0.5f, 0.0f , 1.0f };
+        vertices[14].color = { 0.5f, 0.5f, 0.5f , 1.0f };
 
-        vertices[15].color = { 0.0f, 0.25f, 0.0f };
-        vertices[16].color = { 0.0f, 0.25f, 0.25f };
-        vertices[17].color = { 0.0f, 0.0f, 0.25f };
-        vertices[18].color = { 0.25f, 0.0f, 0.25f };
-        vertices[19].color = { 0.25f, 0.0f, 0.25f };
-        vertices[20].color = { 0.25f, 0.25f, 0.0f };
-        vertices[21].color = { 0.25f, 0.25f, 0.25f };
+        vertices[15].color = { 0.0f, 0.25f, 0.0f , 1.0f };
+        vertices[16].color = { 0.0f, 0.25f, 0.25f , 1.0f };
+        vertices[17].color = { 0.0f, 0.0f, 0.25f , 1.0f };
+        vertices[18].color = { 0.25f, 0.0f, 0.25f , 1.0f };
+        vertices[19].color = { 0.25f, 0.0f, 0.25f , 1.0f };
+        vertices[20].color = { 0.25f, 0.25f, 0.0f , 1.0f };
+        vertices[21].color = { 0.25f, 0.25f, 0.25f , 1.0f };
 
-        vertices[22].color = { 0.0f, 0.75f, 0.0f };
-        vertices[23].color = { 0.0f, 0.75f, 0.75f };
+        vertices[22].color = { 0.0f, 0.75f, 0.0f , 1.0f };
+        vertices[23].color = { 0.0f, 0.75f, 0.75f , 1.0f };
 
 
         indices = {
@@ -963,34 +963,34 @@ namespace Polyhedra {
           vertices[22].pos = { -0.6324555, 0, -0.843274 };
           vertices[23].pos = { 0, 0, -1.054093 };
 
-          vertices[0].color = { 0.0f, 1.0f, 0.0f };
-          vertices[1].color = { 0.0f, 1.0f, 1.0f };
-          vertices[2].color = { 0.0f, 0.0f, 1.0f };
-          vertices[3].color = { 1.0f, 0.0f, 1.0f };
-          vertices[4].color = { 1.0f, 0.0f, 0.0f };
-          vertices[5].color = { 1.0f, 1.0f, 0.0f };
-          vertices[6].color = { 1.0f, 1.0f, 1.0f };
+          vertices[0].color = { 0.0f, 1.0f, 0.0f, 1.0f  };
+          vertices[1].color = { 0.0f, 1.0f, 1.0f , 1.0f };
+          vertices[2].color = { 0.0f, 0.0f, 1.0f , 1.0f };
+          vertices[3].color = { 1.0f, 0.0f, 1.0f , 1.0f };
+          vertices[4].color = { 1.0f, 0.0f, 0.0f , 1.0f };
+          vertices[5].color = { 1.0f, 1.0f, 0.0f , 1.0f };
+          vertices[6].color = { 1.0f, 1.0f, 1.0f , 1.0f };
 
-          vertices[7].color = { 0.0f, 0.0f, 0.0f };
+          vertices[7].color = { 0.0f, 0.0f, 0.0f , 1.0f };
 
-          vertices[8].color = { 0.0f, 0.5f, 0.0f };
-          vertices[9].color = { 0.0f, 0.5f, 0.5f };
-          vertices[10].color = { 0.0f, 0.0f, 0.5f };
-          vertices[11].color = { 0.5f, 0.0f, 0.5f };
-          vertices[12].color = { 0.5f, 0.0f, 0.5f };
-          vertices[13].color = { 0.5f, 0.5f, 0.0f };
-          vertices[14].color = { 0.5f, 0.5f, 0.5f };
+          vertices[8].color = { 0.0f, 0.5f, 0.0f , 1.0f };
+          vertices[9].color = { 0.0f, 0.5f, 0.5f , 1.0f };
+          vertices[10].color = { 0.0f, 0.0f, 0.5f , 1.0f };
+          vertices[11].color = { 0.5f, 0.0f, 0.5f , 1.0f };
+          vertices[12].color = { 0.5f, 0.0f, 0.5f , 1.0f };
+          vertices[13].color = { 0.5f, 0.5f, 0.0f , 1.0f };
+          vertices[14].color = { 0.5f, 0.5f, 0.5f , 1.0f };
 
-          vertices[15].color = { 0.0f, 0.25f, 0.0f };
-          vertices[16].color = { 0.0f, 0.25f, 0.25f };
-          vertices[17].color = { 0.0f, 0.0f, 0.25f };
-          vertices[18].color = { 0.25f, 0.0f, 0.25f };
-          vertices[19].color = { 0.25f, 0.0f, 0.25f };
-          vertices[20].color = { 0.25f, 0.25f, 0.0f };
-          vertices[21].color = { 0.25f, 0.25f, 0.25f };
+          vertices[15].color = { 0.0f, 0.25f, 0.0f , 1.0f };
+          vertices[16].color = { 0.0f, 0.25f, 0.25f , 1.0f };
+          vertices[17].color = { 0.0f, 0.0f, 0.25f , 1.0f };
+          vertices[18].color = { 0.25f, 0.0f, 0.25f , 1.0f };
+          vertices[19].color = { 0.25f, 0.0f, 0.25f , 1.0f };
+          vertices[20].color = { 0.25f, 0.25f, 0.0f , 1.0f };
+          vertices[21].color = { 0.25f, 0.25f, 0.25f , 1.0f };
 
-          vertices[22].color = { 0.0f, 0.75f, 0.0f };
-          vertices[23].color = { 0.0f, 0.75f, 0.75f };
+          vertices[22].color = { 0.0f, 0.75f, 0.0f , 1.0f };
+          vertices[23].color = { 0.0f, 0.75f, 0.75f , 1.0f };
 
           //1,2,3,
           //1,6,3,

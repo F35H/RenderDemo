@@ -9,14 +9,18 @@ void resizeWindowCallback(GLFWwindow* window, int width, int height) {
   currentWindow->windowResize = true;
 } //ResizeCallback
 
+
+
 void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+
   Window* currentWindow = externalProgram->getCurrentWindow();
-  
+  currentWindow->camDegree = {0.0f,0.0f,0.0f};
+  currentWindow->smoothMove = Window::SmoothMove();
   if (action == GLFW_RELEASE) {
     switch (key) {
     case GLFW_KEY_LEFT:
       if (currentWindow->freeMove) {
-        currentWindow->camDegree.y += 45;
+        currentWindow->smoothMove.rLeft = true;
       }
       else {
         currentWindow->modelIndex += 1;
@@ -25,7 +29,7 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 
     case GLFW_KEY_RIGHT:
       if (currentWindow->freeMove) {
-        currentWindow->camDegree.y -= 45;
+        currentWindow->smoothMove.rRight = true;
       }
       else {
         currentWindow->modelIndex += 1;
@@ -34,8 +38,7 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 
     case GLFW_KEY_UP:
       if (currentWindow->freeMove) {
-        if (currentWindow->camPos.x > currentWindow->camPos.z) currentWindow->camDegree.z += 45;
-        if (currentWindow->camPos.x < currentWindow->camPos.z) currentWindow->camDegree.x += 45;
+        currentWindow->smoothMove.rUp = true;
       }
       else {
         currentWindow->modelIndex += 1;
@@ -44,8 +47,7 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 
     case GLFW_KEY_DOWN:
       if (currentWindow->freeMove) {
-        if (currentWindow->camPos.x > currentWindow->camPos.z) currentWindow->camDegree.z -= 45;
-        if (currentWindow->camPos.x < currentWindow->camPos.z) currentWindow->camDegree.x -= 45;
+        currentWindow->smoothMove.rDown = true;
       }
       else {
         currentWindow->modelIndex += 1;
@@ -54,7 +56,7 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 
     case GLFW_KEY_A:
       if (currentWindow->freeMove) {
-        currentWindow->camPos.x += 1;
+        currentWindow->smoothMove.tLeft = true;
       }
       else {
         currentWindow->modelIndex += 1;
@@ -63,7 +65,7 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 
     case GLFW_KEY_D:
       if (currentWindow->freeMove) {
-        currentWindow->camPos.x -= 1;
+        currentWindow->smoothMove.tRight = true;
       }
       else {
         currentWindow->modelIndex += 1;
@@ -72,25 +74,25 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 
     case GLFW_KEY_W:
       if (currentWindow->freeMove) {
-        currentWindow->camPos.z += 1;
+        currentWindow->smoothMove.tForward = true;
       };
       break;
 
     case GLFW_KEY_S:
       if (currentWindow->freeMove) {
-        currentWindow->camPos.z -= 1;
+        currentWindow->smoothMove.tBackward = true;
       };
       break;
 
     case GLFW_KEY_SPACE:
       if (currentWindow->freeMove) {
-        currentWindow->camPos.y += 1;
+        currentWindow->smoothMove.tUp = true;
       };
       break;
 
     case GLFW_KEY_LEFT_SHIFT:
       if (currentWindow->freeMove) {
-        currentWindow->camPos.y -= 1;
+        currentWindow->smoothMove.tDown = true;
       };
       break;
 
@@ -110,10 +112,31 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
     }; //switch
 
 
+    if (currentWindow->smoothMove.rDown) {
+      if (currentWindow->camPos.x > currentWindow->camPos.z) currentWindow->camDegree.z += 45;
+      if (currentWindow->camPos.x < currentWindow->camPos.z) currentWindow->camDegree.x += 45;
+    }; //rDown
+    if (currentWindow->smoothMove.rUp) {
+      if (currentWindow->camPos.x > currentWindow->camPos.z) currentWindow->camDegree.z -= 45;
+      if (currentWindow->camPos.x < currentWindow->camPos.z) currentWindow->camDegree.x -= 45;
+      std::cout << currentWindow->camDegree.z << "\n";
+    }; //rUp
+
+    if (currentWindow->smoothMove.rLeft)    currentWindow->camDegree.y += 45;
+    if (currentWindow->smoothMove.rRight)   currentWindow->camDegree.y -= 45;
+
+    if (currentWindow->smoothMove.tDown)    { currentWindow->camPos.y -= 10; currentWindow->camPos += currentWindow->camPos;  };
+    if (currentWindow->smoothMove.tUp)      {  currentWindow->camPos.y += 10; currentWindow->camPos += currentWindow->camPos; };
+    if (currentWindow->smoothMove.tForward) { currentWindow->camPos.z += 10; currentWindow->camPos += currentWindow->camPos; };
+    if (currentWindow->smoothMove.tBackward) { currentWindow->camPos.z -= 10; currentWindow->camPos += currentWindow->camPos; };
+    if (currentWindow->smoothMove.tLeft) { currentWindow->camPos.x += 10; currentWindow->camPos += currentWindow->camPos; };
+    if (currentWindow->smoothMove.tRight) { currentWindow->camPos.x -= 10; currentWindow->camPos += currentWindow->camPos; };
+
+
     if (currentWindow->modelIndex < 0) { currentWindow->modelIndex = currentWindow->allModels.size() - 1; };
     if (currentWindow->modelIndex > currentWindow->allModels.size() - 1) { currentWindow->modelIndex = 0; };
 
-    currentWindow->currentModel = std::make_shared<Polytope>(currentWindow->allModels[currentWindow->modelIndex]);
+    //currentWindow->currentModel = std::make_shared<Polytope>(currentWindow->allModels[currentWindow->modelIndex]);
   }; //if (action == GLFW_RELEASE)
 }; //keyboardCallback
 
@@ -213,6 +236,36 @@ ExternalProgram::ExternalProgram(int winNum) {
   vkEnumeratePhysicalDevices(vulkanInstance, &deviceCount, devices.data());
 
   for (const auto& device : devices) {
+    VkImageFormatProperties* pProperties = new VkImageFormatProperties();
+    
+    auto colorFormats = { 
+      VK_FORMAT_R8G8B8_SRGB, 
+      VK_FORMAT_B8G8R8_SRGB, 
+      VK_FORMAT_B8G8R8A8_SRGB, 
+      VK_FORMAT_B8G8R8_SNORM, 
+      VK_FORMAT_B8G8R8A8_SNORM, 
+      VK_FORMAT_B8G8R8A8_SINT, 
+      VK_FORMAT_B8G8R8_SINT,
+      VK_FORMAT_R8G8B8A8_SINT };
+
+    for (auto& color : colorFormats) {
+      result = vkGetPhysicalDeviceImageFormatProperties(
+        device,
+        color,
+        VK_IMAGE_TYPE_2D,
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_STORAGE_BIT,
+        0,
+        pProperties
+      );
+
+      if (result != VK_SUCCESS) continue;
+      if (result == VK_SUCCESS) break;
+    };
+
+    if (result != VK_SUCCESS) continue;
+    errorHandler->ConfirmSuccess(result, "Color Format: None Available");
+    
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 

@@ -41,7 +41,7 @@
 #define COLORGAMUT            int(PC.matProp[0][0])           
 
 //LIGHTING AND SHADING
-#define POINTLIGHTCOLOR       vec3(1.0f, 0.0f, 0.0f)
+#define POINTLIGHTCOLOR       vec3(1.0f, 1.0f, 1.0f)
 #define POINTLIGHTPOS         vec3(0.0f, 2.0f, 2.0f)
 #define POINTLIGHTINTENSITY   15.0f
 #define AMBILIGHTCOLOR        vec3(0.1f, 0.1f, 0.1f)           
@@ -53,15 +53,15 @@
 #define FILTERSEVERITY         1
 
 
-layout(location = 0) in flat vec3 flatFragColor;
-layout(location = 1) in smooth vec3 smoothFragColor;
+layout(location = 0) in flat vec4 flatFragColor;
+layout(location = 1) in smooth vec4 smoothFragColor;
 layout(location = 2) in vec3 fragNorm;
 layout(location = 3) in vec3 fragPos;
 layout(location = 4) in vec2 texPos;
 
 layout(binding = 1) uniform sampler2D imageSampler;
 
-layout(location = 0) out vec4 outColor;
+layout(location = 0) out vec3 outColor;
 
 layout( push_constant ) uniform constants
 {
@@ -91,15 +91,14 @@ uvec3 pcg3d(uvec3 v) {
 } //pcg3d
 
 void main() {
-  vec3 convertedColor = smoothFragColor;
+  vec3 convertedColor = smoothFragColor.rgb;
   if (SHADINGTYPE == FLAT) {
-    convertedColor = flatFragColor;
+    convertedColor = flatFragColor.rgb;
   }; //SHADINGTYPE == FLAT
 
   switch (COLORGAMUT) {
     //RGB LINEAGE
     default:
-      convertedColor = vec3(1.0,1.0,1.0);
       break;
     case CMY:
       convertedColor = vec3(1 - convertedColor[0], 1 - convertedColor[1], 1 - convertedColor[2]);
@@ -721,8 +720,16 @@ void main() {
       break;
   }; //switch
 
+//finalColor.rgb = newAlpha * newColor + (1 - newAlpha) * oldColor;
+//finalColor.a = newAlpha.a;
+  //convertedColor = texture(imageSampler, texPos).rgb * convertedColor;
 
-
-
-  outColor = texture(imageSampler, texPos) * convertedColor;
+  //srcColor.rgb * (1.0 - dst.color.a) + dstColor.rgb * dstColor.a
+  //outColor = srcColor.rgb * 1.0 + dstColor.rgb * dstColor.a
+  
+  vec4 dst = vec4(vec3(texture(imageSampler, texPos).rgb * convertedColor),
+  texture(imageSampler, texPos).a * smoothFragColor.a);
+  vec3 src = vec3(1.0f,1.0f,1.0f);
+  outColor = src.rgb * (1.0-dst.a) + dst.rgb * dst.a; 
+  //outColor = vec4(1.0 + vec3(texture(imageSampler, texPos).rgb * convertedColor) * 0.0f, 1.0f);
 } //main

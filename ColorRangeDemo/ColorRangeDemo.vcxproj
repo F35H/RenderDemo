@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="heads\Vulkan\Components.h" />
     <ClCompile Include="src\ColorRangeDemo.cpp" />
     <ClCompile Include="heads\ConsoleUI\Facade.h" />
     <ClCompile Include="heads\Vulkan\Objects\ModelTypes\Polyhedra.h" />
@@ -175,6 +176,7 @@
     <ClInclude Include="heads\ConsoleUI\Commands\UIConfigure.h" />
     <ClInclude Include="heads\ConsoleUI\Commands\UIMainMenu.h" />
     <ClInclude Include="heads\ConsoleUI\UISingletons.h" />
+    <ClInclude Include="heads\UPCLASS.h" />
     <ClInclude Include="heads\Vulkan\GeneralIncludes.h" />
     <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData\PushConsts.h" />
     <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData\UBOs.h" />
@@ -184,6 +186,8 @@
     <ClInclude Include="heads\Vulkan\Objects\ModelTypes\ModelFactory.h" />
     <ClInclude Include="heads\Vulkan\Objects\Buffers\UniformData.h" />
     <ClInclude Include="heads\Vulkan\Objects\Render\RenderOut.h" />
+    <ClInclude Include="heads\Vulkan\Objects\Shaders\ShaderFactory.h" />
+    <ClInclude Include="heads\Vulkan\Objects\Shaders\Shaders.h" />
     <ClInclude Include="heads\Vulkan\Objects\Syncronization\CPUSyncFactory.h" />
     <ClInclude Include="heads\Vulkan\Objects\Syncronization\GPUSyncFactory.h" />
     <ClInclude Include="heads\Vulkan\Objects\Syncronization\SyncFactory.h" />

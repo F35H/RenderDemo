@@ -1,0 +1,20 @@
+#version 450
+
+layout (binding = 0, rgba8) uniform readonly image2D inputImage;
+layout (binding = 1, rgba8) uniform writeonly image2D outputImage;
+
+
+void main() {
+  vec3 pixel = imageLoad(inputImage, ivec2(gl_GlobalInvocationID.xy)).rgb;
+
+  float grayColor = pixel.x;
+  grayColor += pixel.y;
+  grayColor += pixel.z;
+  grayColor /= 3;
+
+  pixel.x = grayColor;
+  pixel.y = grayColor;
+  pixel.z = grayColor;
+
+  imageStore(outputImage, ivec2(gl_GlobalInvocationID.xy), vec4(pixel, 1.0f));
+}

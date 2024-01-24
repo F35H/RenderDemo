@@ -51,6 +51,9 @@
     <ClCompile Include="src\Vulkan\Objects\Buffers\CommonBuffers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="heads\Vulkan\Components.h">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\ftxui-component.lib" />
@@ -1323,6 +1326,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\Users\micha\Downloads\stb-master(1)\stb-master\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heads\UPCLASS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heads\Vulkan\Objects\Shaders\ShaderFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heads\Vulkan\Objects\Shaders\Shaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
